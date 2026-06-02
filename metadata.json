@@ -1,0 +1,6 @@
+{
+  "name": "Stewpot Connect",
+  "description": "An internal communication, story capture, and community hub for Stewpot staff and programs.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
