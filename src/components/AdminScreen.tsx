@@ -9,7 +9,7 @@ interface AdminScreenProps {
   onAddUser: (u: User) => void;
   onUpdateUser: (u: User) => void;
   onAddDoc: (d: DocumentItem) => void;
-  onDeleteDoc: (id: number) => void;
+  onDeleteDoc: (id: string) => void;
   onClose: () => void;
 }
 
@@ -49,7 +49,7 @@ export default function AdminScreen({
     'Manager', 'Grants & Admin Manager', 'Shelter Supervisor', 'Shelter Relief Staff',
     'Case Manager', 'Housing Stability Case Manager', 'Housing Navigator',
     'Outreach Specialist', 'Program Staff', 'Receptionist', 'Contract Employee',
-    'Custodian', 'Volunteer'
+    'Custodian', 'Volunteer Assistant'
   ];
 
   const departments = [
@@ -74,7 +74,7 @@ export default function AdminScreen({
 
     const initials = newUserName.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     const newUser: User = {
-      id: Date.now(),
+      id: String(Date.now()),
       name: newUserName.trim(),
       email: emailLower,
       password: newUserPassword,
@@ -136,7 +136,7 @@ export default function AdminScreen({
     reader.onload = (loadEvent) => {
       if (loadEvent.target?.result) {
         const newDoc: DocumentItem = {
-          id: Date.now(),
+          id: String(Date.now()),
           name: file.name,
           displayName,
           size: `${(file.size / 1024).toFixed(0)}KB`,

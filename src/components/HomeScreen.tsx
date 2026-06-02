@@ -8,7 +8,7 @@ interface HomeScreenProps {
   posts: Post[];
   docs: DocumentItem[];
   onSetTab: (tab: string) => void;
-  onViewDoc: (docId: number) => void;
+  onViewDoc: (docId: string) => void;
   onLaunchRecord: () => void;
 }
 
@@ -88,20 +88,33 @@ export default function HomeScreen({
         <div className="absolute -bottom-16 right-6 w-32 h-32 bg-white/5 rounded-full" />
         
         <div className="flex justify-center mb-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3.0"
-            className="w-10 h-10 text-[#E8F5E9]"
-          >
-            <path d="M12 21a9 9 0 0 0 9-9c0-1.49-.36-2.9-1.01-4.15L17 12H7L4.01 7.85A8.96 8.96 0 0 0 3 12a9 9 0 0 0 9 9Z" />
-            <path d="M12 1v2" />
-            <path d="M12 9v1" />
-            <path d="M8 4V3" />
-            <path d="M16 4V3" />
-          </svg>
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden relative">
+            <img
+              src="https://lh3.googleusercontent.com/d/1p51mr-0Uo7Y-V4u4-d_Zxsa6AothkASN"
+              alt="Stewpot Connect Logo"
+              className="w-full h-full object-contain p-2"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                if (sib) sib.style.display = 'block';
+              }}
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.0"
+              className="w-10 h-10 text-[#E8F5E9] hidden"
+            >
+              <path d="M12 21a9 9 0 0 0 9-9c0-1.49-.36-2.9-1.01-4.15L17 12H7L4.01 7.85A8.96 8.96 0 0 0 3 12a9 9 0 0 0 9 9Z" />
+              <path d="M12 1v2" />
+              <path d="M12 9v1" />
+              <path d="M8 4V3" />
+              <path d="M16 4V3" />
+            </svg>
+          </div>
         </div>
         
         <div className="text-xs font-semibold tracking-widest uppercase text-[#FAFAF7]/80 mb-1">
@@ -125,7 +138,7 @@ export default function HomeScreen({
         </div>
         <div className="text-left">
           <h3 className="text-sm font-bold text-brand-text">Record a Story</h3>
-          <p className="text-xs text-brand-text-light mt-0.5">Capture client &amp; volunteer moments</p>
+          <p className="text-xs text-brand-text-light mt-0.5">Capture a client or volunteer experience</p>
         </div>
         <ChevronRight className="w-5 h-5 text-brand-text-light ml-auto flex-shrink-0" />
       </div>

@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // --- Global Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+    
+    // --- Entity Specific Validation Blueprints ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'role'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 150
+        && data.email is string && data.email.size() <= 150
+        && (data.role == 'admin' || data.role == 'member');
+    }
+    
+    function isValidDocumentItem(data) {
+      return data.keys().hasAll(['name', 'displayName', 'cat'])
+        && data.name is string && data.name.size() <= 300
+        && data.displayName is string && data.displayName.size() <= 300
+        && (data.cat == 'staff' || data.cat == 'programs' || data.cat == 'brand');
+    }
+    
+    function isValidPost(data) {
+      return data.keys().hasAll(['author', 'cat', 'text', 'date'])
+        && data.author is string && data.author.size() <= 150
+        && (data.cat == 'Announcement' || data.cat == 'Kudos' || data.cat == 'Update' || data.cat == 'Question')
+        && data.text is string && data.text.size() <= 10000
+        && data.date is string && data.date.size() <= 100;
+    }
+    
+    function isValidStory(data) {
+      return data.keys().hasAll(['title', 'program', 'author', 'hasConsent', 'consentType'])
+        && data.title is string && data.title.size() <= 300
+        && data.program is string && data.program.size() <= 150
+        && data.author is string && data.author.size() <= 150
+        && data.hasConsent is bool
+        && data.consentType is string;
+    }
+
+    // --- Collection Matching Blocks ---
+    
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isValidUser(incoming()) && (
+        !isSignedIn() || 
+        isAdmin() || 
+        request.auth.uid == userId
+      );
+      allow update: if isValidUser(incoming()) && (
+        !isSignedIn() || 
+        isAdmin() || (
+          request.auth.uid == userId &&
+          incoming().role == existing().role &&
+          incoming().email == existing().email
+        )
+      );
+      allow delete: if !isSignedIn() || isAdmin();
+    }
+    
+    // 2. Docs (Resources) Collection
+    match /docs/{docId} {
+      allow read: if true;
+      allow create, update: if (!isSignedIn() || isAdmin()) && isValidDocumentItem(incoming());
+      allow delete: if !isSignedIn() || isAdmin();
+    }
+    
+    // 3. Posts Collection
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isValidPost(incoming());
+      allow update: if isValidPost(incoming()) && (
+        !isSignedIn() || 
+        isAdmin() || 
+        (existing().authorId == request.auth.uid || existing().author == request.auth.token.email)
+      );
+      allow delete: if !isSignedIn() || isAdmin() || (
+        existing().authorId == request.auth.uid || 
+        existing().author == request.auth.token.email
+      );
+    }
+    
+    // 4. Stories Collection
+    match /stories/{storyId} {
+      allow read: if true;
+      allow create: if isValidStory(incoming());
+      allow update: if isValidStory(incoming()) && (
+        !isSignedIn() || 
+        isAdmin() || 
+        (existing().authorId == request.auth.uid || existing().author == request.auth.token.email)
+      );
+      allow delete: if !isSignedIn() || isAdmin() || (
+        existing().authorId == request.auth.uid || 
+        existing().author == request.auth.token.email
+      );
+    }
+  }
+}

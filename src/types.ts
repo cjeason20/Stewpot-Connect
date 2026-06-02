@@ -1,7 +1,7 @@
 export type UserRole = 'admin' | 'member';
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   password?: string;
@@ -21,13 +21,13 @@ export interface User {
 }
 
 export interface Story {
-  id: number;
+  id: string;
   title: string;
   program: string;
   date: string;
   audioUrl?: string;
   author: string;
-  authorId?: number;
+  authorId?: string;
   notes?: string;
   hasConsent: boolean;
   consentType: string; // 'none' | 'internal' | 'external'
@@ -43,10 +43,10 @@ export interface PostAttachment {
 }
 
 export interface Post {
-  id: number;
+  id: string;
   author: string;
   initials: string;
-  authorId?: number | null;
+  authorId?: string | null;
   cat: PostCategory;
   text: string;
   link?: string;
@@ -55,7 +55,7 @@ export interface Post {
 }
 
 export interface DocumentItem {
-  id: number;
+  id: string;
   name: string;
   displayName: string;
   size: string;

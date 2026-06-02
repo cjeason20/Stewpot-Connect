@@ -5,7 +5,7 @@ import { Search, FileText, Download, Eye, FileSpreadsheet, Image as ImageIcon, T
 interface ResourcesScreenProps {
   currentUser: User;
   docs: DocumentItem[];
-  onDeleteDoc: (id: number) => void;
+  onDeleteDoc: (id: string) => void;
 }
 
 export default function ResourcesScreen({

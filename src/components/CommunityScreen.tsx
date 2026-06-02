@@ -6,8 +6,8 @@ interface CommunityScreenProps {
   currentUser: User;
   posts: Post[];
   onAddPost: (post: Post) => void;
-  onDeletePost: (id: number) => void;
-  onEditPost: (id: number, text: string) => void;
+  onDeletePost: (id: string) => void;
+  onEditPost: (id: string, text: string) => void;
 }
 
 export default function CommunityScreen({
@@ -72,7 +72,7 @@ export default function CommunityScreen({
     }
 
     const newPost: Post = {
-      id: Date.now(),
+      id: String(Date.now()),
       author: currentUser.name,
       initials: currentUser.initials || currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),
       authorId: currentUser.id,
@@ -90,7 +90,7 @@ export default function CommunityScreen({
     setIsComposeOpen(false);
   };
 
-  const handleEdit = (id: number, currentText: string) => {
+  const handleEdit = (id: string, currentText: string) => {
     const txt = prompt('Edit your post:', currentText);
     if (txt !== null) {
       onEditPost(id, txt.trim());
@@ -108,8 +108,8 @@ export default function CommunityScreen({
       
       {/* Header */}
       <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0">
-        <h1 className="font-poppins font-bold text-2xl">Staff Community</h1>
-        <p className="text-xs text-[#E8F5E9]/90 mt-1">Updates, kudos &amp; shared success</p>
+        <h1 className="font-poppins font-bold text-2xl">Community</h1>
+        <p className="text-xs text-[#E8F5E9]/90 mt-1">Share updates, staff appreciations, and more</p>
       </div>
 
       {/* Compose trigger */}

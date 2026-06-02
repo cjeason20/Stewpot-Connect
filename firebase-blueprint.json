@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Stewpot staff member details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "title": { "type": "string" },
+        "dept": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "member"] },
+        "initials": { "type": "string" },
+        "bday": { "type": "string" },
+        "anniv": { "type": "string" },
+        "photo": { "type": "string" },
+        "photoPosX": { "type": "string" },
+        "photoPosY": { "type": "string" },
+        "notifPosts": { "type": "boolean" },
+        "notifAnnounce": { "type": "boolean" },
+        "notifBdays": { "type": "boolean" },
+        "notifStories": { "type": "boolean" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "DocumentItem": {
+      "title": "DocumentItem",
+      "description": "Official files and protocol documents uploaded in resources",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "displayName": { "type": "string" },
+        "size": { "type": "string" },
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "data": { "type": "string" },
+        "cat": { "type": "string", "enum": ["staff", "programs", "brand"] },
+        "driveLink": { "type": "string" }
+      },
+      "required": ["name", "displayName", "cat"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A team community update, kudos or operational announcement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "author": { "type": "string" },
+        "initials": { "type": "string" },
+        "authorId": { "type": "string" },
+        "cat": { "type": "string", "enum": ["Announcement", "Kudos", "Update", "Question"] },
+        "text": { "type": "string" },
+        "link": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["author", "cat", "text", "date"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "Vocal story summary with patron consent data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "program": { "type": "string" },
+        "date": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "notes": { "type": "string" },
+        "hasConsent": { "type": "boolean" },
+        "consentType": { "type": "string" }
+      },
+      "required": ["title", "program", "author", "hasConsent", "consentType"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles for Stewpot Staff"
+    },
+    "/docs/{docId}": {
+      "schema": "DocumentItem",
+      "description": "Shared documents available in the vault"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Community blackboard posts"
+    },
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Capture client voice consent stories"
+    }
+  }
+}

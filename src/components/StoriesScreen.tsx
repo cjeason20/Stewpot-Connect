@@ -6,7 +6,7 @@ interface StoriesScreenProps {
   currentUser: User;
   stories: Story[];
   onAddStory: (story: Story) => void;
-  onDeleteStory: (id: number) => void;
+  onDeleteStory: (id: string) => void;
 }
 
 export default function StoriesScreen({
@@ -130,7 +130,7 @@ export default function StoriesScreen({
     }
 
     const newStory: Story = {
-      id: Date.now(),
+      id: String(Date.now()),
       title: title.trim(),
       program,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -154,7 +154,7 @@ export default function StoriesScreen({
         <>
           <div className="bg-brand-green px-5 pt-12 pb-5 text-white">
             <h1 className="font-poppins font-bold text-2xl">Story Capture</h1>
-            <p className="text-xs text-[#E8F5E9]/90 mt-1">Preserve and celebrate the voices of Jackson, MS</p>
+            <p className="text-xs text-[#E8F5E9]/90 mt-1">Preserve and celebrate the voices of Stewpot</p>
           </div>
 
           {/* Quick wizard card */}
