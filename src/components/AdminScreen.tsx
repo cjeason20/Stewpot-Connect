@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { User, DocumentItem, UserRole } from '../types';
-import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud, Link } from 'lucide-react';
+import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud } from 'lucide-react';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface AdminScreenProps {
   currentUser: User;
   users: User[];
   docs: DocumentItem[];
-  onAddUser: (u: User) => void;
-  onUpdateUser: (u: User) => void;
-  onAddDoc: (d: DocumentItem) => void;
+  onAddUser: (u: User) => Promise<void>;
+  onUpdateUser: (u: User) => Promise<void>;
+  onDeleteUser: (id: string) => Promise<void>;
+  onAddDoc: (d: DocumentItem) => Promise<void>;
   onDeleteDoc: (id: string) => void;
   onClose: () => void;
 }
@@ -19,6 +22,7 @@ export default function AdminScreen({
   docs,
   onAddUser,
   onUpdateUser,
+  onDeleteUser,
   onAddDoc,
   onDeleteDoc,
   onClose,
@@ -35,6 +39,7 @@ export default function AdminScreen({
   const [newUserBday, setNewUserBday] = useState('');
   const [newUserAnniv, setNewUserAnniv] = useState('');
   const [lastAddedUser, setLastAddedUser] = useState<User | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Edit User Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -59,7 +64,7 @@ export default function AdminScreen({
     'Meals on Wheels', 'Volunteer Programs', 'Admin'
   ];
 
-  const handleAddUserSubmit = (e: React.FormEvent) => {
+  const handleAddUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const emailLower = newUserEmail.trim().toLowerCase();
     if (!newUserName.trim() || !emailLower || !newUserPassword) {
@@ -86,19 +91,20 @@ export default function AdminScreen({
       anniv: newUserAnniv || undefined
     };
 
-    onAddUser(newUser);
-    setLastAddedUser(newUser);
-    
-    // Clear inputs
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserPassword('');
-    setNewUserTitle('');
-    setNewUserDept('');
-    setNewUserBday('');
-    setNewUserAnniv('');
-
-    alert(`Colleague "${newUser.name}" added successfully on device stack!`);
+    try {
+      await onAddUser(newUser);
+      setLastAddedUser(newUser);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserTitle('');
+      setNewUserDept('');
+      setNewUserBday('');
+      setNewUserAnniv('');
+      alert(`Colleague "${newUser.name}" added successfully!`);
+    } catch {
+      alert('Failed to save colleague. Please check your connection and try again.');
+    }
   };
 
   const sendInvitationEmail = () => {
@@ -114,46 +120,55 @@ export default function AdminScreen({
     setEditingUser({ ...u });
   };
 
-  const handleEditUserSubmit = (e: React.FormEvent) => {
+  const handleEditUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     if (!editingUser.name.trim() || !editingUser.email.trim()) {
       alert('Name and email cannot be empty.');
       return;
     }
-    editingUser.initials = editingUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    onUpdateUser(editingUser);
-    setEditingUser(null);
-    alert('User account modified successfully!');
+    const updated = { ...editingUser, initials: editingUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() };
+    try {
+      await onUpdateUser(updated);
+      setEditingUser(null);
+      alert('User account modified successfully!');
+    } catch {
+      alert('Failed to save changes. Please check your connection and try again.');
+    }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
 
     const displayName = docDisplayName.trim() || file.name;
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      if (loadEvent.target?.result) {
-        const newDoc: DocumentItem = {
-          id: String(Date.now()),
-          name: file.name,
-          displayName,
-          size: `${(file.size / 1024).toFixed(0)}KB`,
-          type: file.type,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          data: loadEvent.target.result as string,
-          cat: docCategory,
-          driveLink: driveFolderUrl.trim() || undefined
-        };
-        onAddDoc(newDoc);
-        setDocDisplayName('');
-        setDriveFolderUrl('');
-        alert(`Document "${displayName}" uploaded successfully to Resources tab!`);
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
+    setIsUploadingDoc(true);
+    try {
+      const storageRef = ref(storage, `docs/${String(Date.now())}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const storageUrl = await getDownloadURL(storageRef);
+
+      const newDoc: DocumentItem = {
+        id: String(Date.now()),
+        name: file.name,
+        displayName,
+        size: `${(file.size / 1024).toFixed(0)}KB`,
+        type: file.type,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        storageUrl,
+        cat: docCategory,
+        driveLink: driveFolderUrl.trim() || undefined
+      };
+      await onAddDoc(newDoc);
+      setDocDisplayName('');
+      setDriveFolderUrl('');
+      alert(`Document "${displayName}" uploaded successfully to Resources tab!`);
+    } catch {
+      alert('Upload failed. Please check your connection and try again.');
+    } finally {
+      setIsUploadingDoc(false);
+    }
   };
 
   return (
@@ -215,13 +230,30 @@ export default function AdminScreen({
                     <span className="text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-brand-green-light text-brand-green-dark">
                       {u.role}
                     </span>
-                    <button 
+                    <button
                       onClick={() => handleEditUserClick(u)}
                       className="p-1.5 border border-brand-border hover:bg-brand-cream/80 text-brand-text-mid rounded-lg cursor-pointer"
                       title="Edit User details"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
+                    {u.id !== currentUser.id && (
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Remove ${u.name} from the directory? This cannot be undone.`)) {
+                            try {
+                              await onDeleteUser(u.id);
+                            } catch {
+                              alert('Failed to delete user. Please try again.');
+                            }
+                          }
+                        }}
+                        className="p-1.5 border border-transparent hover:border-red-200 text-red-400 hover:bg-red-50 rounded-lg cursor-pointer"
+                        title="Remove user"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -528,14 +560,15 @@ export default function AdminScreen({
             </div>
 
             <div className="pt-2">
-              <label className="w-full py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light transition-all rounded-xl bg-brand-green-light/40 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer">
+              <label className={`w-full py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light transition-all rounded-xl bg-brand-green-light/40 flex flex-col items-center justify-center gap-1.5 text-center ${isUploadingDoc ? 'cursor-wait opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
                 <FileText className="w-7 h-7 text-brand-green" />
-                <span className="text-xs text-brand-text font-bold">Choose staff document file...</span>
+                <span className="text-xs text-brand-text font-bold">{isUploadingDoc ? 'Uploading...' : 'Choose staff document file...'}</span>
                 <span className="text-[10px] text-brand-text-light">Accepts PDF, Word, JPEG, PNG, Excel</span>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   className="hidden"
                   onChange={handleFileUpload}
+                  disabled={isUploadingDoc}
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
                 />
               </label>

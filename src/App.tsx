@@ -365,6 +365,14 @@ export default function App() {
     }
   };
 
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'users', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `users/${id}`);
+    }
+  };
+
   const handleUpdateUser = async (updatedProfile: User) => {
     try {
       await setDoc(doc(db, 'users', updatedProfile.id), updatedProfile);
@@ -584,6 +592,7 @@ export default function App() {
                     docs={docs}
                     onAddUser={handleAddUser}
                     onUpdateUser={handleUpdateUser}
+                    onDeleteUser={handleDeleteUser}
                     onAddDoc={handleAddDoc}
                     onDeleteDoc={handleDeleteDoc}
                     onClose={() => {

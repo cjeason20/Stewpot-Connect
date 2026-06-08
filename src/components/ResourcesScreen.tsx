@@ -133,7 +133,7 @@ export default function ResourcesScreen({
                         </button>
                         
                         <a
-                          href={d.data}
+                          href={d.storageUrl || d.data}
                           download={d.displayName || d.name}
                           className="p-2 bg-brand-cream border border-brand-border rounded-lg text-brand-text-mid hover:bg-brand-green-light transition-all cursor-pointer"
                           title="Download file"
@@ -176,7 +176,7 @@ export default function ResourcesScreen({
             
             <div className="flex items-center gap-3 flex-shrink-0">
               <a
-                href={activeDoc.data}
+                href={activeDoc.storageUrl || activeDoc.data}
                 download={activeDoc.displayName || activeDoc.name}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white"
                 title="Save file"
@@ -197,13 +197,13 @@ export default function ResourcesScreen({
           <div className="flex-1 overflow-auto bg-zinc-900 justify-center items-center flex">
             {activeDoc.type?.includes('image') ? (
               <img
-                src={activeDoc.data}
+                src={activeDoc.storageUrl || activeDoc.data}
                 alt="Doc preview"
                 className="max-w-full max-h-full object-contain"
               />
             ) : (
               <iframe
-                src={activeDoc.data}
+                src={activeDoc.storageUrl || activeDoc.data}
                 title="Doc previewframe"
                 className="w-full h-full bg-white border-none"
               />

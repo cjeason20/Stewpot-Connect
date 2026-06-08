@@ -61,7 +61,8 @@ export interface DocumentItem {
   size: string;
   type: string;
   date: string;
-  data: string;
+  data?: string;
+  storageUrl?: string;
   cat: 'staff' | 'programs' | 'brand';
   driveLink?: string;
 }
