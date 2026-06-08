@@ -147,6 +147,8 @@ export default function CommunityScreen({
         ) : (
           filteredPosts.map((p) => {
             const isOwn = p.authorId === currentUser.id;
+            const isAdmin = currentUser.role === 'admin';
+            const canDelete = isOwn || isAdmin;
             return (
               <div key={p.id} className="p-4 bg-white">
                 <div className="flex gap-3 items-start">
@@ -161,15 +163,15 @@ export default function CommunityScreen({
                       <span className="font-bold text-sm text-brand-text leading-tight">{p.author}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-brand-text-light font-medium">{p.date}</span>
-                        {isOwn && (
+                        {canDelete && (
                           <div className="flex gap-1">
-                            <button 
+                            {isOwn && <button
                               onClick={() => handleEdit(p.id, p.text)}
                               className="p-1 hover:bg-brand-green-light text-brand-text-light hover:text-brand-green-dark rounded focus:outline-none cursor-pointer"
                               title="Edit post"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
-                            </button>
+                            </button>}
                             <button 
                               onClick={() => onDeletePost(p.id)}
                               className="p-1 hover:bg-red-50 text-brand-text-light hover:text-red-600 rounded focus:outline-none cursor-pointer"
