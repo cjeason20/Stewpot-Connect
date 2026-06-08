@@ -12,7 +12,7 @@ import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield } from 'lu
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
-import { signInAnonymously, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInAnonymously, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -31,6 +31,11 @@ export default function App() {
 
   // Manage Firebase Auth session & auto sign in anonymously
   useEffect(() => {
+    // Surface any errors from a redirect-based Google sign-in (used as a popup fallback).
+    getRedirectResult(auth).catch((e) => {
+      console.error('Google redirect result error:', e);
+    });
+
     const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         setIsAuthed(true);
@@ -42,11 +47,12 @@ export default function App() {
             if (userDocSnap.exists()) {
               setCurrentUser(userDocSnap.data() as User);
             } else {
-              // Provision a default profile under their UID
+              // Provision a default profile under their UID.
+              // Staff with a stewpot.org email are granted member access; only the
+              // organization's named director accounts are provisioned as administrators.
               const emailLower = (firebaseUser.email || '').toLowerCase();
-              const isEmailAdmin = emailLower === 'cj.eason20@gmail.com' || 
-                                   emailLower === 'ceason@stewpot.org' ||
-                                   emailLower.endsWith('stewpot.org');
+              const isEmailAdmin = emailLower === 'cj.eason20@gmail.com' ||
+                                   emailLower === 'ceason@stewpot.org';
               
               const initials = (firebaseUser.displayName || firebaseUser.email || 'SM')
                 .split('@')[0]
@@ -376,6 +382,18 @@ export default function App() {
     }
   };
 
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'users', id));
+      // If an admin removes their own account, end the session cleanly.
+      if (currentUser && currentUser.id === id) {
+        doSignOut();
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `users/${id}`);
+    }
+  };
+
   const handleAddDoc = async (d: DocumentItem) => {
     try {
       await setDoc(doc(db, 'docs', d.id), d);
@@ -565,7 +583,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'profile' && (
-                  <ProfileScreen 
+                  <ProfileScreen
                     currentUser={currentUser}
                     users={users}
                     stories={stories}
@@ -574,21 +592,6 @@ export default function App() {
                     onUpdateProfile={handleUpdateUser}
                     onSignOut={doSignOut}
                     onLaunchAdminPanel={handleLaunchAdminPanel}
-                  />
-                )}
-
-                {activeTab === 'admin' && (
-                  <AdminScreen 
-                    currentUser={currentUser}
-                    users={users}
-                    docs={docs}
-                    onAddUser={handleAddUser}
-                    onUpdateUser={handleUpdateUser}
-                    onAddDoc={handleAddDoc}
-                    onDeleteDoc={handleDeleteDoc}
-                    onClose={() => {
-                      setActiveTab('profile');
-                    }}
                   />
                 )}
               </>
@@ -652,16 +655,53 @@ export default function App() {
 
       </div>
 
+      {/* Admin dashboard — breaks out of the phone frame into a full-width control panel on desktop */}
+      {currentUser && activeTab === 'admin' && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-stretch justify-center sm:items-center sm:p-6 animate-fade-in">
+          <div className="relative w-full h-full sm:h-[90vh] sm:max-w-5xl bg-brand-cream sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <AdminScreen
+              currentUser={currentUser}
+              users={users}
+              docs={docs}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+              onDeleteUser={handleDeleteUser}
+              onAddDoc={handleAddDoc}
+              onDeleteDoc={handleDeleteDoc}
+              onClose={() => {
+                setActiveTab('profile');
+              }}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 
   async function handleGoogleLogin() {
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (e) {
+    } catch (e: any) {
+      const code = e?.code || '';
+      // Pop-ups are commonly blocked or unsupported (embedded browsers, some mobile webviews).
+      // Fall back to a full-page redirect so single sign-on still completes.
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/popup-closed-by-user' ||
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr) {
+          console.error('Google redirect sign-in error:', redirectErr);
+        }
+      }
       console.error('Google sign-in error:', e);
-      alert('Google authentication failed. Please try again.');
+      alert('Google sign-in could not be completed. Please allow pop-ups for this site (or check that Google sign-in is enabled for this domain) and try again.');
     }
   }
 
