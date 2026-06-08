@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { User, Post, DocumentItem, Story, UserRole, PostCategory } from './types';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
@@ -157,7 +157,7 @@ export default function App() {
     });
 
     // 2. Snapshot listener for POSTS
-    const unsubPosts = onSnapshot(collection(db, ‘posts’), (snapshot) => {
+    const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
       const pList: Post[] = [];
       snapshot.forEach(docSnap => {
         pList.push({ ...docSnap.data(), id: docSnap.id } as Post);
@@ -166,7 +166,7 @@ export default function App() {
       pList.sort((a, b) => b.id.localeCompare(a.id));
       setPosts(pList);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, ‘posts’);
+      handleFirestoreError(error, OperationType.LIST, 'posts');
     });
 
     // 3. Snapshot listener for DOCS (Resources)
@@ -405,7 +405,7 @@ export default function App() {
                   onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
               )}
               {activeTab === 'stories' && (
-                <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onDeleteStory={handleDeleteStory} />
+                <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
               )}
               {activeTab === 'forum' && (
                 <CommunityScreen currentUser={currentUser} posts={posts} onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
