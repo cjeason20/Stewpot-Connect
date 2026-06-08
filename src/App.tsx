@@ -8,7 +8,7 @@ import ResourcesScreen from './components/ResourcesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminScreen from './components/AdminScreen';
 
-import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield } from 'lucide-react';
+import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
@@ -313,15 +313,16 @@ export default function App() {
       {/* ============================================================
           DESKTOP LAYOUT — visible on lg screens and above
       ============================================================ */}
-      <div className="hidden lg:flex min-h-screen bg-gray-50">
+      <div className="hidden lg:flex min-h-screen" style={{ background: 'linear-gradient(135deg, #eef5ee 0%, #e8f0e8 100%)' }}>
 
-        {/* Sidebar */}
+        {/* ── Sidebar ── */}
         {currentUser && (
-          <aside className="w-64 bg-brand-green flex-shrink-0 flex flex-col fixed h-full z-20 shadow-xl">
-            {/* Logo */}
-            <div className="px-6 pt-7 pb-5 border-b border-white/10 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+          <aside className="w-72 flex-shrink-0 flex flex-col fixed h-full z-20" style={{ background: 'linear-gradient(180deg, #2d6a2d 0%, #1a4d1a 100%)' }}>
+
+            {/* Logo / Brand */}
+            <div className="px-6 pt-8 pb-6 flex-shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
                   <img
                     src="https://lh3.googleusercontent.com/d/1p51mr-0Uo7Y-V4u4-d_Zxsa6AothkASN"
                     alt="Stewpot Connect"
@@ -331,65 +332,78 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <h1 className="font-poppins font-bold text-white text-base leading-tight">Stewpot Connect</h1>
-                  <p className="text-[10px] text-white/50 mt-0.5">Staff Hub & Communications</p>
+                  <h1 className="font-poppins font-bold text-white text-[15px] leading-tight tracking-tight">Stewpot Connect</h1>
+                  <p className="text-[11px] text-white/50 mt-0.5">Staff Hub &amp; Communications</p>
                 </div>
               </div>
             </div>
 
+            {/* Divider */}
+            <div className="mx-5 border-t border-white/10 mb-2" />
+
+            {/* Nav Section Label */}
+            <p className="px-5 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-white/30">Navigation</p>
+
             {/* Nav links */}
-            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+            <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
               {([
-                { id: 'home',      label: 'Home',        Icon: Home },
-                { id: 'stories',   label: 'Stories',     Icon: Mic },
-                { id: 'forum',     label: 'Community',   Icon: MessageSquare },
-                { id: 'resources', label: 'Resources',   Icon: BookOpen },
-                { id: 'profile',   label: 'My Profile',  Icon: UserIcon },
-                ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield }] : [])
-              ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
+                { id: 'home',      label: 'Home',        Icon: Home,         desc: 'Dashboard & updates' },
+                { id: 'stories',   label: 'Stories',     Icon: Mic,          desc: 'Record & browse stories' },
+                { id: 'forum',     label: 'Community',   Icon: MessageSquare,desc: 'Team posts & announcements' },
+                { id: 'resources', label: 'Resources',   Icon: BookOpen,     desc: 'Documents & files' },
+                { id: 'profile',   label: 'My Profile',  Icon: UserIcon,     desc: 'Settings & account' },
+                ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield, desc: 'Users, docs & controls' }] : [])
+              ] as { id: string; label: string; Icon: React.ElementType; desc: string }[]).map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
-                    activeTab === id ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left cursor-pointer group ${
+                    activeTab === id
+                      ? 'bg-white/15 text-white shadow-sm'
+                      : 'text-white/65 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-4.5 h-4.5 flex-shrink-0" />
-                  {label}
-                  {activeTab === id && <span className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
+                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${activeTab === id ? 'bg-white/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className="flex-1">{label}</span>
+                  {activeTab === id && <span className="w-1.5 h-1.5 bg-white rounded-full flex-shrink-0" />}
                 </button>
               ))}
             </nav>
 
-            {/* User info + sign out */}
-            <div className="px-4 py-4 border-t border-white/10 flex-shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {/* Divider */}
+            <div className="mx-5 border-t border-white/10 mt-3" />
+
+            {/* User card */}
+            <div className="p-4 flex-shrink-0">
+              <div className="bg-white/10 rounded-2xl p-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow">
                   {currentUser.initials || currentUser.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white truncate">{currentUser.name}</div>
-                  <div className="text-[10px] text-white/50 capitalize">{currentUser.role}</div>
+                  <div className="text-sm font-bold text-white truncate leading-tight">{currentUser.name}</div>
+                  <div className="text-[11px] text-white/50 mt-0.5 truncate">{currentUser.title || (currentUser.role === 'admin' ? 'Administrator' : 'Staff Member')}</div>
                 </div>
                 <button
                   onClick={doSignOut}
                   title="Sign out"
-                  className="text-white/50 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer flex-shrink-0"
+                  className="text-white/40 hover:text-white p-1.5 rounded-lg hover:bg-white/15 transition-all cursor-pointer flex-shrink-0"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                  </svg>
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </aside>
         )}
 
-        {/* Main content area */}
-        <main className={`flex-1 flex flex-col min-h-screen overflow-hidden ${currentUser ? 'ml-64' : ''}`}>
+        {/* ── Main content ── */}
+        <main className={`flex-1 flex flex-col min-h-screen ${currentUser ? 'ml-72' : ''}`}>
+
+          {/* Login — full bleed, no topbar */}
           {activeTab === 'login' && (
-            <div className="flex-1 flex items-center justify-center bg-brand-green min-h-screen">
-              <div className="w-full max-w-md">
+            <div className="flex-1 flex items-center justify-center min-h-screen" style={{ background: 'linear-gradient(135deg, #2d6a2d 0%, #1a4d1a 100%)' }}>
+              <div className="w-full max-w-md mx-auto px-4">
                 <LoginScreen
                   users={users}
                   onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
@@ -398,31 +412,72 @@ export default function App() {
               </div>
             </div>
           )}
+
           {currentUser && (
-            <div className="flex-1 overflow-y-auto bg-brand-cream">
-              {activeTab === 'home' && (
-                <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
-                  onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
-              )}
-              {activeTab === 'stories' && (
-                <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
-              )}
-              {activeTab === 'forum' && (
-                <CommunityScreen currentUser={currentUser} posts={posts} onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
-              )}
-              {activeTab === 'resources' && (
-                <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
-              )}
-              {activeTab === 'profile' && (
-                <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
-                  onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
-              )}
-              {activeTab === 'admin' && (
-                <AdminScreen currentUser={currentUser} users={users} docs={docs}
-                  onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
-                  onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
-              )}
-            </div>
+            <>
+              {/* ── Sticky top header ── */}
+              <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-black/5 flex-shrink-0 shadow-sm">
+                <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-gray-800 leading-tight">
+                      {activeTab === 'home'      && 'Dashboard'}
+                      {activeTab === 'stories'   && 'Stories'}
+                      {activeTab === 'forum'     && 'Community'}
+                      {activeTab === 'resources' && 'Resources'}
+                      {activeTab === 'profile'   && 'My Profile'}
+                      {activeTab === 'admin'     && 'Admin Panel'}
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-all cursor-pointer" title="Notifications">
+                      <Bell className="w-4 h-4" />
+                    </button>
+                    <div
+                      onClick={() => setActiveTab('profile')}
+                      className="flex items-center gap-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl px-3 py-1.5 cursor-pointer transition-all"
+                    >
+                      <div className="w-7 h-7 bg-brand-green text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {currentUser.initials || currentUser.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 hidden xl:block">{currentUser.name.split(' ')[0]}</span>
+                    </div>
+                  </div>
+                </div>
+              </header>
+
+              {/* ── Page content ── */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="max-w-5xl mx-auto px-6 py-6">
+                  <div className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden min-h-[calc(100vh-7rem)]">
+                    {activeTab === 'home' && (
+                      <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
+                        onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
+                    )}
+                    {activeTab === 'stories' && (
+                      <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
+                    )}
+                    {activeTab === 'forum' && (
+                      <CommunityScreen currentUser={currentUser} posts={posts} onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
+                    )}
+                    {activeTab === 'resources' && (
+                      <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
+                    )}
+                    {activeTab === 'profile' && (
+                      <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
+                        onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
+                    )}
+                    {activeTab === 'admin' && (
+                      <AdminScreen currentUser={currentUser} users={users} docs={docs}
+                        onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
+                        onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </main>
       </div>
