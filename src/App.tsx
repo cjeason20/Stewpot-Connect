@@ -300,8 +300,130 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center min-h-screen bg-[#2D2D2D] p-0 sm:p-5 font-sans overflow-x-hidden antialiased">
-      
+    <div className="font-sans antialiased overflow-x-hidden">
+
+      {/* ============================================================
+          DESKTOP LAYOUT — visible on lg screens and above
+      ============================================================ */}
+      <div className="hidden lg:flex min-h-screen bg-gray-50">
+
+        {/* Sidebar */}
+        {currentUser && (
+          <aside className="w-64 bg-brand-green flex-shrink-0 flex flex-col fixed h-full z-20 shadow-xl">
+            {/* Logo */}
+            <div className="px-6 pt-7 pb-5 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                  <img
+                    src="https://lh3.googleusercontent.com/d/1p51mr-0Uo7Y-V4u4-d_Zxsa6AothkASN"
+                    alt="Stewpot Connect"
+                    className="w-full h-full object-contain p-1.5"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                </div>
+                <div>
+                  <h1 className="font-poppins font-bold text-white text-base leading-tight">Stewpot Connect</h1>
+                  <p className="text-[10px] text-white/50 mt-0.5">Staff Hub & Communications</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Nav links */}
+            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+              {([
+                { id: 'home',      label: 'Home',        Icon: Home },
+                { id: 'stories',   label: 'Stories',     Icon: Mic },
+                { id: 'forum',     label: 'Community',   Icon: MessageSquare },
+                { id: 'resources', label: 'Resources',   Icon: BookOpen },
+                { id: 'profile',   label: 'My Profile',  Icon: UserIcon },
+                ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield }] : [])
+              ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
+                    activeTab === id ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-4.5 h-4.5 flex-shrink-0" />
+                  {label}
+                  {activeTab === id && <span className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
+                </button>
+              ))}
+            </nav>
+
+            {/* User info + sign out */}
+            <div className="px-4 py-4 border-t border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {currentUser.initials || currentUser.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-white truncate">{currentUser.name}</div>
+                  <div className="text-[10px] text-white/50 capitalize">{currentUser.role}</div>
+                </div>
+                <button
+                  onClick={doSignOut}
+                  title="Sign out"
+                  className="text-white/50 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer flex-shrink-0"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
+
+        {/* Main content area */}
+        <main className={`flex-1 flex flex-col min-h-screen overflow-hidden ${currentUser ? 'ml-64' : ''}`}>
+          {activeTab === 'login' && (
+            <div className="flex-1 flex items-center justify-center bg-brand-green min-h-screen">
+              <div className="w-full max-w-md">
+                <LoginScreen
+                  users={users}
+                  onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
+                  onGoogleLogin={handleGoogleLogin}
+                />
+              </div>
+            </div>
+          )}
+          {currentUser && (
+            <div className="flex-1 overflow-y-auto bg-brand-cream">
+              {activeTab === 'home' && (
+                <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
+                  onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
+              )}
+              {activeTab === 'stories' && (
+                <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onDeleteStory={handleDeleteStory} />
+              )}
+              {activeTab === 'forum' && (
+                <CommunityScreen currentUser={currentUser} posts={posts} onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
+              )}
+              {activeTab === 'resources' && (
+                <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
+              )}
+              {activeTab === 'profile' && (
+                <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
+                  onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
+              )}
+              {activeTab === 'admin' && (
+                <AdminScreen currentUser={currentUser} users={users} docs={docs}
+                  onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
+                  onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* ============================================================
+          MOBILE LAYOUT — visible below lg breakpoint (unchanged)
+      ============================================================ */}
+      <div className="lg:hidden flex flex-col sm:flex-row items-center justify-center min-h-screen bg-[#2D2D2D] p-0 sm:p-5">
+
       {/* Container Wrapper */}
       <div className="flex flex-col sm:flex-row items-center gap-0 sm:gap-10 max-w-6xl w-full">
         
@@ -538,6 +660,8 @@ export default function App() {
         </div>
 
       </div>
+
+      </div> {/* end lg:hidden mobile wrapper */}
 
     </div>
   );
