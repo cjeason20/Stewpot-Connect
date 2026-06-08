@@ -509,8 +509,34 @@ export default function StoriesScreen({
                     </div>
                   )}
 
+                  {/* OR divider */}
+                  <div className="w-full flex items-center gap-3 mt-5">
+                    <div className="flex-1 h-px bg-brand-border" />
+                    <span className="text-[10px] text-brand-text-light font-bold uppercase tracking-widest">or upload a file</span>
+                    <div className="flex-1 h-px bg-brand-border" />
+                  </div>
+
+                  {/* Upload audio file */}
+                  <label className={`w-full mt-3 cursor-pointer border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light/40 transition-all rounded-xl bg-brand-cream/60 flex flex-col items-center justify-center gap-1.5 py-4 px-3 text-center ${isRecording ? 'opacity-40 pointer-events-none' : ''}`}>
+                    <UploadCloud className="w-6 h-6 text-brand-green" />
+                    <span className="text-xs font-bold text-brand-text">Upload Audio Recording</span>
+                    <span className="text-[10px] text-brand-text-light">MP3, M4A, WAV, OGG, WebM</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (isRecording) handleStopRecording();
+                        setAudioUrl(URL.createObjectURL(file));
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+
                   {/* Program Prompt Box */}
-                  <div className="w-full mt-6 bg-brand-cream border-l-4 border-brand-green rounded-r-xl p-3 text-left">
+                  <div className="w-full mt-4 bg-brand-cream border-l-4 border-brand-green rounded-r-xl p-3 text-left">
                     <div className="text-[10px] font-bold text-brand-green-dark uppercase tracking-wider mb-1">🎙️ Recording Prompt:</div>
                     <p className="text-xs text-brand-text-mid italic leading-relaxed">
                       "Help me understand how you found out about Stewpot's program, and what difference it has made to you this week?"

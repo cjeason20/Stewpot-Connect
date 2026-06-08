@@ -36,10 +36,30 @@ export default function AdminScreen({
   const [newUserTitle, setNewUserTitle] = useState('');
   const [newUserDept, setNewUserDept] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('member');
-  const [newUserBday, setNewUserBday] = useState('');
+  const [newUserBdayMon, setNewUserBdayMon] = useState('');
+  const [newUserBdayDay, setNewUserBdayDay] = useState('');
   const [newUserAnniv, setNewUserAnniv] = useState('');
   const [lastAddedUser, setLastAddedUser] = useState<User | null>(null);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  const months = [
+    { val: '01', label: 'January' }, { val: '02', label: 'February' },
+    { val: '03', label: 'March' },   { val: '04', label: 'April' },
+    { val: '05', label: 'May' },     { val: '06', label: 'June' },
+    { val: '07', label: 'July' },    { val: '08', label: 'August' },
+    { val: '09', label: 'September'},{ val: '10', label: 'October' },
+    { val: '11', label: 'November' },{ val: '12', label: 'December' },
+  ];
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+
+  // Parse a bday string ("MM-DD" or legacy "YYYY-MM-DD") into month/day parts
+  const parseBday = (bday?: string): { mon: string; day: string } => {
+    if (!bday) return { mon: '', day: '' };
+    const parts = bday.split('-');
+    if (parts.length === 3) return { mon: parts[1], day: parts[2] }; // YYYY-MM-DD legacy
+    if (parts.length === 2) return { mon: parts[0], day: parts[1] }; // MM-DD new
+    return { mon: '', day: '' };
+  };
 
   // Edit User Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -78,6 +98,7 @@ export default function AdminScreen({
     }
 
     const initials = newUserName.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const bdayValue = newUserBdayMon && newUserBdayDay ? `${newUserBdayMon}-${newUserBdayDay}` : '';
     const newUser: User = {
       id: String(Date.now()),
       name: newUserName.trim(),
@@ -87,7 +108,7 @@ export default function AdminScreen({
       initials,
       ...(newUserTitle ? { title: newUserTitle } : {}),
       ...(newUserDept ? { dept: newUserDept } : {}),
-      ...(newUserBday ? { bday: newUserBday } : {}),
+      ...(bdayValue ? { bday: bdayValue } : {}),
       ...(newUserAnniv ? { anniv: newUserAnniv } : {})
     };
 
@@ -99,7 +120,8 @@ export default function AdminScreen({
       setNewUserPassword('');
       setNewUserTitle('');
       setNewUserDept('');
-      setNewUserBday('');
+      setNewUserBdayMon('');
+      setNewUserBdayDay('');
       setNewUserAnniv('');
       alert(`Colleague "${newUser.name}" added successfully!`);
     } catch {
@@ -359,13 +381,25 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">&#x1F382; Birthday Date</label>
-                <input
-                  type="date"
-                  value={newUserBday}
-                  onChange={(e) => setNewUserBday(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
-                />
+                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">&#x1F382; Birthday (Month &amp; Day)</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <select
+                    value={newUserBdayMon}
+                    onChange={(e) => setNewUserBdayMon(e.target.value)}
+                    className="w-full px-2 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
+                  >
+                    <option value="">Month</option>
+                    {months.map(m => <option key={m.val} value={m.val}>{m.label}</option>)}
+                  </select>
+                  <select
+                    value={newUserBdayDay}
+                    onChange={(e) => setNewUserBdayDay(e.target.value)}
+                    className="w-full px-2 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
+                  >
+                    <option value="">Day</option>
+                    {days.map(d => <option key={d} value={d}>{parseInt(d)}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -490,18 +524,35 @@ export default function AdminScreen({
 
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Birthday</label>
-                      <input 
-                        type="date" 
-                        value={editingUser.bday || ''}
-                        onChange={(e) => setEditingUser({ ...editingUser, bday: e.target.value })}
-                        className="w-full px-2.5 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
-                      />
+                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Birthday (Month &amp; Day)</label>
+                      {(() => {
+                        const { mon: eMon, day: eDay } = parseBday(editingUser.bday);
+                        return (
+                          <div className="grid grid-cols-2 gap-1">
+                            <select
+                              value={eMon}
+                              onChange={(e) => setEditingUser({ ...editingUser, bday: `${e.target.value}-${eDay}` })}
+                              className="w-full px-1.5 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
+                            >
+                              <option value="">Mo.</option>
+                              {months.map(m => <option key={m.val} value={m.val}>{m.label.slice(0,3)}</option>)}
+                            </select>
+                            <select
+                              value={eDay}
+                              onChange={(e) => setEditingUser({ ...editingUser, bday: `${eMon}-${e.target.value}` })}
+                              className="w-full px-1.5 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
+                            >
+                              <option value="">Day</option>
+                              {days.map(d => <option key={d} value={d}>{parseInt(d)}</option>)}
+                            </select>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Anniversary</label>
-                      <input 
-                        type="date" 
+                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Work Anniversary</label>
+                      <input
+                        type="date"
                         value={editingUser.anniv || ''}
                         onChange={(e) => setEditingUser({ ...editingUser, anniv: e.target.value })}
                         className="w-full px-2.5 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"

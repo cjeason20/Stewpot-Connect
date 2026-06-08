@@ -64,7 +64,9 @@ export default function HomeScreen({
     return users
       .filter((u) => u.bday)
       .map((u) => {
-        const bd = new Date(u.bday + 'T00:00:00');
+        // Support both "MM-DD" (new) and "YYYY-MM-DD" (legacy) formats
+        const bdStr = u.bday.length === 5 ? `2000-${u.bday}` : u.bday;
+        const bd = new Date(bdStr + 'T00:00:00');
         const thisYearBirthday = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
         
         if (thisYearBirthday < today) {
@@ -254,7 +256,8 @@ export default function HomeScreen({
               const uInitials = u.initials || u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
               const formattedBday = () => {
                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const d = new Date(u.bday + 'T00:00:00');
+                const bdStr2 = u.bday.length === 5 ? `2000-${u.bday}` : u.bday;
+                const d = new Date(bdStr2 + 'T00:00:00');
                 return `${months[d.getMonth()]} ${d.getDate()}`;
               };
 
