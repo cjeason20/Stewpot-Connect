@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Post, DocumentItem } from '../types';
-import { Mic, Megaphone, Cake, FileText, ChevronRight, Eye } from 'lucide-react';
+import { Mic, Megaphone, FileText, ChevronRight, Eye } from 'lucide-react';
 
 interface HomeScreenProps {
   currentUser: User;
@@ -35,6 +35,18 @@ export default function HomeScreen({
 
   // Extract up to 3 announcements
   const announcements = posts.filter((p) => p.cat === 'Announcement').slice(0, 3);
+
+  // Recent posts across all categories (up to 5, excluding announcements already shown)
+  const recentPosts = posts.filter((p) => p.cat !== 'Announcement').slice(0, 5);
+
+  const getCatStyle = (cat: string) => {
+    switch (cat) {
+      case 'Kudos':    return { pill: 'text-purple-600 bg-purple-50', emoji: '🎉' };
+      case 'Update':   return { pill: 'text-sky-600 bg-sky-50',       emoji: 'ℹ️' };
+      case 'Question': return { pill: 'text-amber-600 bg-amber-50',   emoji: '❓' };
+      default:         return { pill: 'text-brand-text-light bg-brand-cream', emoji: '💬' };
+    }
+  };
 
   // Extract birthdays occurring in current month or next 30 days
   const getUpcomingBirthdays = () => {
@@ -178,6 +190,49 @@ export default function HomeScreen({
                 </div>
               </div>
             ))
+          )}
+        </div>
+      </div>
+
+      {/* Recent Team Posts */}
+      <div className="px-5 mt-6">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-sm font-bold text-brand-text flex items-center gap-1.5">💬 Recent Team Posts</h2>
+          <button
+            onClick={() => onSetTab('forum')}
+            className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"
+          >
+            See all
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {recentPosts.length === 0 ? (
+            <div className="bg-white rounded-xl border border-brand-border p-4 text-center text-xs text-brand-text-light italic">
+              No team posts yet. Share an update, kudos, or question in Community!
+            </div>
+          ) : (
+            recentPosts.map((p) => {
+              const { pill, emoji } = getCatStyle(p.cat);
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => onSetTab('forum')}
+                  className="bg-white rounded-xl border border-brand-border p-3.5 hover:border-brand-green/30 transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
+                      {emoji} {p.cat}
+                    </span>
+                    <span className="text-[10px] text-brand-text-light font-medium ml-auto">{p.date}</span>
+                  </div>
+                  {p.text && (
+                    <p className="text-xs text-brand-text-mid leading-relaxed line-clamp-2">{p.text}</p>
+                  )}
+                  <div className="text-[10px] text-brand-text-light mt-2 font-medium">{p.author}</div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
