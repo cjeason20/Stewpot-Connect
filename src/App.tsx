@@ -294,6 +294,14 @@ export default function App() {
     }
   };
 
+  const handleUpdateStory = async (s: Story) => {
+    try {
+      await setDoc(doc(db, 'stories', s.id), s);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `stories/${s.id}`);
+    }
+  };
+
   const handleLaunchAdminPanel = (tab: 'users' | 'docs') => {
     setAdminTabFocus(tab);
     setActiveTab('admin');
@@ -546,10 +554,11 @@ export default function App() {
                 )}
 
                 {activeTab === 'stories' && (
-                  <StoriesScreen 
+                  <StoriesScreen
                     currentUser={currentUser}
                     stories={stories}
                     onAddStory={handleAddStory}
+                    onUpdateStory={handleUpdateStory}
                     onDeleteStory={handleDeleteStory}
                   />
                 )}

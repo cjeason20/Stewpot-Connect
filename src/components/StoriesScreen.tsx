@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { User, Story } from '../types';
-import { Mic, ArrowLeft, CheckCircle, AlertTriangle, FileText, Play, Square, UploadCloud } from 'lucide-react';
+import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2 } from 'lucide-react';
 
 interface StoriesScreenProps {
   currentUser: User;
   stories: Story[];
   onAddStory: (story: Story) => void;
+  onUpdateStory: (story: Story) => Promise<void>;
   onDeleteStory: (id: string) => void;
 }
 
@@ -13,8 +14,10 @@ export default function StoriesScreen({
   currentUser,
   stories,
   onAddStory,
+  onUpdateStory,
   onDeleteStory,
 }: StoriesScreenProps) {
+  const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isRecordingFlow, setIsRecordingFlow] = useState(false);
   const [step, setStep] = useState(1); // 1: Title/Program, 2: Consent, 3: Audio, 4: Notes & Upload
 
@@ -236,13 +239,25 @@ export default function StoriesScreen({
                         <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-bold text-[9px]">Archival Only</span>
                       )}
                       
-                      {currentUser.role === 'admin' && (
-                        <button
-                          onClick={() => onDeleteStory(s.id)}
-                          className="text-red-500 hover:text-red-700 font-bold ml-2 cursor-pointer focus:outline-none"
-                        >
-                          Delete
-                        </button>
+                      {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
+                        <div className="flex items-center gap-1.5 ml-2">
+                          <button
+                            onClick={() => setEditingStory({ ...s })}
+                            className="p-1.5 hover:bg-brand-green-light text-brand-text-light hover:text-brand-green-dark rounded-lg cursor-pointer focus:outline-none"
+                            title="Edit story"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('Delete this story permanently?')) onDeleteStory(s.id);
+                            }}
+                            className="p-1.5 hover:bg-red-50 text-brand-text-light hover:text-red-600 rounded-lg cursor-pointer focus:outline-none"
+                            title="Delete story"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -250,6 +265,82 @@ export default function StoriesScreen({
               ))
             )}
           </div>
+
+          {/* ── Edit Story Modal ── */}
+          {editingStory && (
+            <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-brand-border">
+                  <h3 className="text-sm font-bold font-poppins text-brand-text">Edit Story</h3>
+                  <button onClick={() => setEditingStory(null)} className="text-brand-text-light hover:text-brand-text p-1 cursor-pointer focus:outline-none">✕</button>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Story Title</label>
+                  <input
+                    type="text"
+                    value={editingStory.title}
+                    onChange={(e) => setEditingStory({ ...editingStory, title: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Program</label>
+                  <select
+                    value={editingStory.program}
+                    onChange={(e) => setEditingStory({ ...editingStory, program: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
+                  >
+                    {['Community Kitchen','Clothing Closet','Food Pantry','Housing Assistance',"Matt's House",'Billy Brumfield Shelter','Special Events & Communications','Teen Services',"Children's Services",'Meals on Wheels','Volunteer Programs','Admin'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Consent Type</label>
+                  <select
+                    value={editingStory.consentType}
+                    onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: e.target.value !== 'none' })}
+                    className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
+                  >
+                    <option value="external">External / Public Communications</option>
+                    <option value="internal">Internal Staff Training Only</option>
+                    <option value="restricted">Restricted Archivist Only</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Notes</label>
+                  <textarea
+                    value={editingStory.notes || ''}
+                    onChange={(e) => setEditingStory({ ...editingStory, notes: e.target.value })}
+                    rows={4}
+                    className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none"
+                  />
+                </div>
+
+                <button
+                  onClick={async () => {
+                    if (!editingStory.title.trim() || !editingStory.program) {
+                      alert('Title and program are required.');
+                      return;
+                    }
+                    try {
+                      await onUpdateStory(editingStory);
+                      setEditingStory(null);
+                    } catch {
+                      alert('Failed to save changes. Please try again.');
+                    }
+                  }}
+                  className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         /* WIZARD RECORD FLOW */
