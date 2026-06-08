@@ -164,7 +164,8 @@ export default function AdminScreen({
       setDocDisplayName('');
       setDriveFolderUrl('');
       alert(`Document "${displayName}" uploaded successfully to Resources tab!`);
-    } catch {
+    } catch (err) {
+      console.error('Upload error:', err);
       alert('Upload failed. Please check your connection and try again.');
     } finally {
       setIsUploadingDoc(false);
