@@ -158,7 +158,7 @@ export default function AdminScreen({
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         storageUrl,
         cat: docCategory,
-        driveLink: driveFolderUrl.trim() || undefined
+        ...(driveFolderUrl.trim() ? { driveLink: driveFolderUrl.trim() } : {})
       };
       await onAddDoc(newDoc);
       setDocDisplayName('');
