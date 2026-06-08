@@ -1,5 +1,11 @@
 {
-  "storage": {
-    "rules": "storage.rules"
-  }
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": [
+    {
+      "bucket": "gen-lang-client-0239467623.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ]
 }

@@ -5,7 +5,7 @@ import { Send, FileText, Image as ImageIcon, Link, X, MessageSquare, Megaphone, 
 interface CommunityScreenProps {
   currentUser: User;
   posts: Post[];
-  onAddPost: (post: Post) => void;
+  onAddPost: (post: Post) => Promise<void>;
   onDeletePost: (id: string) => void;
   onEditPost: (id: string, text: string) => void;
 }
@@ -64,7 +64,7 @@ export default function CommunityScreen({
     reader.readAsDataURL(file);
   };
 
-  const handlePostSubmit = (e: React.FormEvent) => {
+  const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() && !attachment && !postLink) {
       alert('Post content cannot be empty. Write a brief statement or attach media.');
@@ -78,16 +78,20 @@ export default function CommunityScreen({
       authorId: currentUser.id,
       cat: category,
       text: text.trim(),
-      link: postLink.trim() || undefined,
-      attachment,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      ...(postLink.trim() ? { link: postLink.trim() } : {}),
+      ...(attachment ? { attachment } : { attachment: null }),
     };
 
-    onAddPost(newPost);
-    setText('');
-    setPostLink('');
-    setAttachment(null);
-    setIsComposeOpen(false);
+    try {
+      await onAddPost(newPost);
+      setText('');
+      setPostLink('');
+      setAttachment(null);
+      setIsComposeOpen(false);
+    } catch {
+      alert('Failed to post. Please check your connection and try again.');
+    }
   };
 
   const handleEdit = (id: string, currentText: string) => {

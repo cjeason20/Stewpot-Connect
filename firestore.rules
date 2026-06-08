@@ -91,30 +91,16 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true;
       allow create: if isValidPost(incoming());
-      allow update: if isValidPost(incoming()) && (
-        !isSignedIn() || 
-        isAdmin() || 
-        (existing().authorId == request.auth.uid || existing().author == request.auth.token.email)
-      );
-      allow delete: if !isSignedIn() || isAdmin() || (
-        existing().authorId == request.auth.uid || 
-        existing().author == request.auth.token.email
-      );
+      allow update: if isValidPost(incoming()) && isSignedIn();
+      allow delete: if isSignedIn();
     }
-    
+
     // 4. Stories Collection
     match /stories/{storyId} {
       allow read: if true;
       allow create: if isValidStory(incoming());
-      allow update: if isValidStory(incoming()) && (
-        !isSignedIn() || 
-        isAdmin() || 
-        (existing().authorId == request.auth.uid || existing().author == request.auth.token.email)
-      );
-      allow delete: if !isSignedIn() || isAdmin() || (
-        existing().authorId == request.auth.uid || 
-        existing().author == request.auth.token.email
-      );
+      allow update: if isValidStory(incoming()) && isSignedIn();
+      allow delete: if isSignedIn();
     }
   }
 }
