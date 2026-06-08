@@ -83,12 +83,12 @@ export default function AdminScreen({
       name: newUserName.trim(),
       email: emailLower,
       password: newUserPassword,
-      title: newUserTitle,
-      dept: newUserDept,
       role: newUserRole,
       initials,
-      bday: newUserBday || undefined,
-      anniv: newUserAnniv || undefined
+      ...(newUserTitle ? { title: newUserTitle } : {}),
+      ...(newUserDept ? { dept: newUserDept } : {}),
+      ...(newUserBday ? { bday: newUserBday } : {}),
+      ...(newUserAnniv ? { anniv: newUserAnniv } : {})
     };
 
     try {
@@ -127,7 +127,15 @@ export default function AdminScreen({
       alert('Name and email cannot be empty.');
       return;
     }
-    const updated = { ...editingUser, initials: editingUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() };
+    const { bday, anniv, title, dept, driveLink: _dl, ...rest } = editingUser as User & { driveLink?: string };
+    const updated = {
+      ...rest,
+      initials: editingUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),
+      ...(title ? { title } : {}),
+      ...(dept ? { dept } : {}),
+      ...(bday ? { bday } : {}),
+      ...(anniv ? { anniv } : {})
+    };
     try {
       await onUpdateUser(updated);
       setEditingUser(null);
