@@ -157,7 +157,7 @@ export default function App() {
     });
 
     // 2. Snapshot listener for POSTS
-    const unsubPosts = onSnapshot(collection(db, ‘posts’), (snapshot) => {
+    const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
       const pList: Post[] = [];
       snapshot.forEach(docSnap => {
         pList.push({ ...docSnap.data(), id: docSnap.id } as Post);
@@ -166,7 +166,7 @@ export default function App() {
       pList.sort((a, b) => b.id.localeCompare(a.id));
       setPosts(pList);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, ‘posts’);
+      handleFirestoreError(error, OperationType.LIST, 'posts');
     });
 
     // 3. Snapshot listener for DOCS (Resources)
