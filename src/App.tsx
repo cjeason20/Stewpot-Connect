@@ -157,158 +157,36 @@ export default function App() {
     });
 
     // 2. Snapshot listener for POSTS
-    const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
-      if (snapshot.empty) {
-        // Seed initial posts if empty
-        const seedPosts: Post[] = [
-          {
-            id: '101',
-            author: 'Chris Eason',
-            initials: 'CE',
-            authorId: '1',
-            cat: 'Announcement',
-            text: 'The Stewpot Annual Gala is scheduled for October 15th! Thanks to all departmental coordinators who are helping with the invitations. Let’s make 2026 our best year yet.',
-            date: 'May 30',
-            link: 'https://stewpot.org/gala'
-          },
-          {
-            id: '102',
-            author: 'Sarah Johnson',
-            initials: 'SJ',
-            authorId: '2',
-            cat: 'Kudos',
-            text: 'Shoutout to the Billy Brumfield Shelter team for handling the emergency intake seamlessly last night during the storms. Real dedication and deep community care! 🎉',
-            date: 'May 28'
-          },
-          {
-            id: '103',
-            author: 'David Vance',
-            initials: 'DV',
-            authorId: '3',
-            cat: 'Update',
-            text: 'New transitional hours for the Clothing Closet are in effect starting Monday. I’ve uploaded the protocol PDF in the Resources tab. Please review it before your shifts.',
-            date: 'May 27'
-          },
-          {
-            id: '104',
-            author: 'Sarah Johnson',
-            initials: 'SJ',
-            authorId: '2',
-            cat: 'Question',
-            text: 'Does anyone have extra laundry detergent available at Matt\'s House? We are running low on standard stock and would appreciate a quick transfer of cases.',
-            date: 'May 26'
-          }
-        ];
-        seedPosts.forEach(p => {
-          setDoc(doc(db, 'posts', p.id), p).catch(e => {
-            console.error('Error seeding posts', e);
-          });
-        });
-      } else {
-        const pList: Post[] = [];
-        snapshot.forEach(docSnap => {
-          pList.push({ ...docSnap.data(), id: docSnap.id } as Post);
-        });
-        // Sort posts descending by id to mimic newer updates first
-        pList.sort((a, b) => b.id.localeCompare(a.id));
-        setPosts(pList);
-      }
+    const unsubPosts = onSnapshot(collection(db, ‘posts’), (snapshot) => {
+      const pList: Post[] = [];
+      snapshot.forEach(docSnap => {
+        pList.push({ ...docSnap.data(), id: docSnap.id } as Post);
+      });
+      // Sort posts descending by id to mimic newer updates first
+      pList.sort((a, b) => b.id.localeCompare(a.id));
+      setPosts(pList);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'posts');
+      handleFirestoreError(error, OperationType.LIST, ‘posts’);
     });
 
     // 3. Snapshot listener for DOCS (Resources)
     const unsubDocs = onSnapshot(collection(db, 'docs'), (snapshot) => {
-      if (snapshot.empty) {
-        // Seed initial documents if empty
-        const seedDocs: DocumentItem[] = [
-          {
-            id: '201',
-            name: 'stewpot_handbook_2026.pdf',
-            displayName: 'Staff Handbook & Agency Guidelines 2026',
-            size: '1.2MB',
-            type: 'application/pdf',
-            date: 'May 1, 2026',
-            cat: 'staff',
-            data: 'data:application/pdf;base64,JVBERi0xLjQKJ...'
-          },
-          {
-            id: '202',
-            name: 'emergency_inclement_weather_protocol.pdf',
-            displayName: 'Emergency Inclement Weather Protocols & Ingress',
-            size: '420KB',
-            type: 'application/pdf',
-            date: 'Jan 12, 2026',
-            cat: 'programs',
-            data: 'data:application/pdf;base64,JVBERi0xLjQKJ...'
-          },
-          {
-            id: '203',
-            name: 'stewpot_official_vector_logos.png',
-            displayName: 'Stewpot Connect Press Logo Assets',
-            size: '2.1MB',
-            type: 'image/png',
-            date: 'Mar 18, 2026',
-            cat: 'brand',
-            data: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDIxYTkgOSAwIDAgMCA5LTljMC0xLjQ5LS4zNi0yLjktMS4wMS00LjE1TDE3IDEySDdMNC4wMSA3Ljg1QTguOTYgOC45NiAwIDAgMCAzIDEyYTkgOSAwIDAgMCA5IDlaIi8+PHBhdGggZD0iTTEyIDF2MiIvPjxwYXRoIGQ9Ik0xMiA5djEiLz48cGF0aCBkPSJNOCA0VjMiLz48cGF0aCBkPSJNMTYgNFYzIi8+PC9zdmc+'
-          }
-        ];
-        seedDocs.forEach(d => {
-          setDoc(doc(db, 'docs', d.id), d).catch(e => {
-            console.error('Error seeding docs', e);
-          });
-        });
-      } else {
-        const dList: DocumentItem[] = [];
-        snapshot.forEach(docSnap => {
-          dList.push({ ...docSnap.data(), id: docSnap.id } as DocumentItem);
-        });
-        setDocs(dList);
-      }
+      const dList: DocumentItem[] = [];
+      snapshot.forEach(docSnap => {
+        dList.push({ ...docSnap.data(), id: docSnap.id } as DocumentItem);
+      });
+      setDocs(dList);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'docs');
     });
 
     // 4. Snapshot listener for STORIES
     const unsubStories = onSnapshot(collection(db, 'stories'), (snapshot) => {
-      if (snapshot.empty) {
-        // Seed initial stories if empty
-        const seedStories: Story[] = [
-          {
-            id: '301',
-            title: "A New Beginning: Matthew's First Apartment",
-            program: 'Housing Assistance',
-            date: 'May 28, 2026',
-            notes: 'Matthew expressed deep gratitude for our community navigators who helped him transition from chronically unhoused shelter status to his first standalone apartment in Jackson.',
-            hasConsent: true,
-            consentType: 'external',
-            author: 'David Vance',
-            authorId: '3'
-          },
-          {
-            id: '302',
-            title: 'Cooking with Youth in Community Kitchen',
-            program: 'Volunteer Programs',
-            date: 'May 24, 2026',
-            notes: 'Group of local high school juniors spent Saturday morning prep-cooking 120 lunches. They shared how connecting with our patrons completely changed their perspectives on community aid.',
-            hasConsent: true,
-            consentType: 'internal',
-            author: 'Sarah Johnson',
-            authorId: '2'
-          }
-        ];
-        seedStories.forEach(s => {
-          setDoc(doc(db, 'stories', s.id), s).catch(e => {
-            console.error('Error seeding stories', e);
-          });
-        });
-      } else {
-        const sList: Story[] = [];
-        snapshot.forEach(docSnap => {
-          sList.push({ ...docSnap.data(), id: docSnap.id } as Story);
-        });
-        setStories(sList);
-      }
+      const sList: Story[] = [];
+      snapshot.forEach(docSnap => {
+        sList.push({ ...docSnap.data(), id: docSnap.id } as Story);
+      });
+      setStories(sList);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'stories');
     });
