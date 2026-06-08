@@ -8,6 +8,7 @@ interface AdminScreenProps {
   docs: DocumentItem[];
   onAddUser: (u: User) => void;
   onUpdateUser: (u: User) => void;
+  onDeleteUser: (id: string) => void;
   onAddDoc: (d: DocumentItem) => void;
   onDeleteDoc: (id: string) => void;
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function AdminScreen({
   docs,
   onAddUser,
   onUpdateUser,
+  onDeleteUser,
   onAddDoc,
   onDeleteDoc,
   onClose,
@@ -114,6 +116,21 @@ export default function AdminScreen({
     setEditingUser({ ...u });
   };
 
+  const handleDeleteUserClick = (u: User) => {
+    if (u.id === currentUser.id) {
+      alert('You cannot remove your own account while you are signed in.');
+      return;
+    }
+    const adminCount = users.filter((x) => x.role === 'admin').length;
+    if (u.role === 'admin' && adminCount <= 1) {
+      alert('You cannot remove the last remaining administrator. Promote another member to admin first.');
+      return;
+    }
+    if (confirm(`Permanently remove ${u.name} from Stewpot Connect?\n\nThis deletes their staff directory profile and cannot be undone.`)) {
+      onDeleteUser(u.id);
+    }
+  };
+
   const handleEditUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
@@ -193,12 +210,13 @@ export default function AdminScreen({
 
       {/* USERS ADMIN PANEL */}
       {activeTab === 'users' && (
-        <div className="p-5 space-y-5">
-          
+        <div className="p-5">
+          <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:items-start">
+
           {/* User list */}
           <div className="space-y-2.5">
             <h3 className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider pl-1">Colleague Directory ({users.length})</h3>
-            <div className="space-y-2 max-h-80 overflow-y-auto no-scrollbar bg-white rounded-xl border border-brand-border divide-y divide-brand-border">
+            <div className="space-y-2 max-h-80 lg:max-h-[60vh] overflow-y-auto no-scrollbar bg-white rounded-xl border border-brand-border divide-y divide-brand-border">
               {users.map((u) => (
                 <div key={u.id} className="p-3.5 flex items-center gap-3 justify-between">
                   <div className="flex items-center gap-2.5 min-width-0">
@@ -215,12 +233,20 @@ export default function AdminScreen({
                     <span className="text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-brand-green-light text-brand-green-dark">
                       {u.role}
                     </span>
-                    <button 
+                    <button
                       onClick={() => handleEditUserClick(u)}
                       className="p-1.5 border border-brand-border hover:bg-brand-cream/80 text-brand-text-mid rounded-lg cursor-pointer"
-                      title="Edit User details"
+                      title="Edit user details"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUserClick(u)}
+                      disabled={u.id === currentUser.id}
+                      className="p-1.5 border border-red-200 hover:bg-red-50 text-red-500 rounded-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={u.id === currentUser.id ? 'You cannot remove your own account' : 'Remove staff member'}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -356,6 +382,7 @@ export default function AdminScreen({
             )}
           </form>
 
+          </div>
           {/* EDIT SPECIFIC USER MODAL */}
           {editingUser && (
             <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 z-50">
@@ -483,8 +510,8 @@ export default function AdminScreen({
 
       {/* DOCUMENTS ADMIN PANEL */}
       {activeTab === 'docs' && (
-        <div className="p-5 space-y-4">
-          
+        <div className="p-5 space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:items-start">
+
           <div className="bg-white rounded-2xl border border-brand-border p-4 space-y-3.5 shadow-sm text-xs">
             <h3 className="text-brand-green font-bold pb-1.5 border-b border-brand-border flex items-center gap-1.5">
               <UploadCloud className="w-4.5 h-4.5" /> Upload Official Documents &amp; Forms
@@ -544,7 +571,7 @@ export default function AdminScreen({
 
           <div className="space-y-2.5">
             <h3 className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider pl-1">All Vault Document Files ({docs.length})</h3>
-            <div className="space-y-2.5 max-h-72 overflow-y-auto no-scrollbar">
+            <div className="space-y-2.5 max-h-72 lg:max-h-[60vh] overflow-y-auto no-scrollbar">
               {docs.length === 0 ? (
                 <div className="text-xs text-brand-text-light bg-white border border-brand-border rounded-xl p-6 text-center italic">
                   No documents in system directory.
