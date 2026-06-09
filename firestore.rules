@@ -88,5 +88,11 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isSignedIn();
     }
+
+    // 6. Calendar Events Collection (admin-managed)
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
   }
 }

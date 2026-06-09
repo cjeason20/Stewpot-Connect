@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { User, DocumentItem, Prompt, UserRole } from '../types';
-import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud, PlusCircle, Check, X } from 'lucide-react';
+import { User, DocumentItem, Prompt, CalendarEvent, UserRole } from '../types';
+import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud, PlusCircle, Check, X, CalendarPlus } from 'lucide-react';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -9,6 +9,7 @@ interface AdminScreenProps {
   users: User[];
   docs: DocumentItem[];
   prompts: Prompt[];
+  events: CalendarEvent[];
   onAddUser: (u: User) => Promise<void>;
   onUpdateUser: (u: User) => Promise<void>;
   onDeleteUser: (id: string) => Promise<void>;
@@ -17,6 +18,9 @@ interface AdminScreenProps {
   onAddPrompt: (p: Prompt) => Promise<void>;
   onUpdatePrompt: (p: Prompt) => Promise<void>;
   onDeletePrompt: (id: string) => Promise<void>;
+  onAddEvent: (e: CalendarEvent) => Promise<void>;
+  onUpdateEvent: (e: CalendarEvent) => Promise<void>;
+  onDeleteEvent: (id: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -25,6 +29,7 @@ export default function AdminScreen({
   users,
   docs,
   prompts,
+  events,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
@@ -33,9 +38,12 @@ export default function AdminScreen({
   onAddPrompt,
   onUpdatePrompt,
   onDeletePrompt,
+  onAddEvent,
+  onUpdateEvent,
+  onDeleteEvent,
   onClose,
 }: AdminScreenProps) {
-  const [activeTab, setActiveTab] = useState<'users' | 'docs' | 'prompts'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'docs' | 'prompts' | 'events'>('users');
   
   // New User Form States
   const [newUserName, setNewUserName] = useState('');
@@ -77,6 +85,14 @@ export default function AdminScreen({
   const [newPromptText, setNewPromptText] = useState('');
   const [newPromptCategory, setNewPromptCategory] = useState('');
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+
+  // Event management state
+  const eventCategories: CalendarEvent['category'][] = ['Meeting','Training','Fundraiser','Community','Holiday','Other'];
+  const blankEvent = (): Omit<CalendarEvent,'id'> => ({
+    title: '', date: '', category: 'Meeting', time: '', endTime: '', location: '', description: '', allDay: false,
+  });
+  const [newEvent, setNewEvent] = useState<Omit<CalendarEvent,'id'>>(blankEvent());
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
   // New Document upload configurations
   const [docDisplayName, setDocDisplayName] = useState('');
@@ -256,6 +272,12 @@ export default function AdminScreen({
           className={`flex-1 py-3 text-xs font-bold text-center border-b-2 focus:outline-none cursor-pointer transition-all ${activeTab === 'prompts' ? 'text-brand-green-dark border-brand-green' : 'text-brand-text-light border-transparent'}`}
         >
           🎙️ Prompts
+        </button>
+        <button
+          onClick={() => setActiveTab('events')}
+          className={`flex-1 py-3 text-xs font-bold text-center border-b-2 focus:outline-none cursor-pointer transition-all ${activeTab === 'events' ? 'text-brand-green-dark border-brand-green' : 'text-brand-text-light border-transparent'}`}
+        >
+          📅 Events
         </button>
       </div>
 
@@ -709,6 +731,230 @@ export default function AdminScreen({
                 ))
               )}
             </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* EVENTS ADMIN PANEL */}
+      {activeTab === 'events' && (
+        <div className="p-5 space-y-5">
+
+          {/* Add / Edit form */}
+          <div className="bg-white rounded-2xl border border-brand-border p-5 space-y-3.5 shadow-sm">
+            <div className="flex items-center gap-2 text-brand-green font-bold text-xs pb-1 border-b border-brand-border">
+              <CalendarPlus className="w-4 h-4" />
+              {editingEvent ? 'Edit Event' : 'Add Calendar Event'}
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">Event Title</label>
+              <input
+                type="text"
+                placeholder="e.g. Staff Meeting"
+                value={editingEvent ? editingEvent.title : newEvent.title}
+                onChange={(e) => editingEvent
+                  ? setEditingEvent({ ...editingEvent, title: e.target.value })
+                  : setNewEvent({ ...newEvent, title: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+              />
+            </div>
+
+            {/* Date + Category */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Date</label>
+                <input
+                  type="date"
+                  value={editingEvent ? editingEvent.date : newEvent.date}
+                  onChange={(e) => editingEvent
+                    ? setEditingEvent({ ...editingEvent, date: e.target.value })
+                    : setNewEvent({ ...newEvent, date: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Category</label>
+                <select
+                  value={editingEvent ? editingEvent.category : newEvent.category}
+                  onChange={(e) => {
+                    const val = e.target.value as CalendarEvent['category'];
+                    editingEvent ? setEditingEvent({ ...editingEvent, category: val }) : setNewEvent({ ...newEvent, category: val });
+                  }}
+                  className="w-full px-2.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                >
+                  {eventCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* All day toggle + times */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer select-none mb-2">
+                <input
+                  type="checkbox"
+                  checked={editingEvent ? !!editingEvent.allDay : !!newEvent.allDay}
+                  onChange={(e) => editingEvent
+                    ? setEditingEvent({ ...editingEvent, allDay: e.target.checked })
+                    : setNewEvent({ ...newEvent, allDay: e.target.checked })}
+                  className="w-3.5 h-3.5 accent-brand-green"
+                />
+                <span className="text-xs font-bold text-brand-text-light">All-day event</span>
+              </label>
+              {!(editingEvent ? editingEvent.allDay : newEvent.allDay) && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-brand-text-light mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      value={editingEvent ? (editingEvent.time || '') : (newEvent.time || '')}
+                      onChange={(e) => editingEvent
+                        ? setEditingEvent({ ...editingEvent, time: e.target.value })
+                        : setNewEvent({ ...newEvent, time: e.target.value })}
+                      className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-brand-text-light mb-1">End Time</label>
+                    <input
+                      type="time"
+                      value={editingEvent ? (editingEvent.endTime || '') : (newEvent.endTime || '')}
+                      onChange={(e) => editingEvent
+                        ? setEditingEvent({ ...editingEvent, endTime: e.target.value })
+                        : setNewEvent({ ...newEvent, endTime: e.target.value })}
+                      className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">Location <span className="font-normal">(optional)</span></label>
+              <input
+                type="text"
+                placeholder="e.g. Community Kitchen, Room 2B"
+                value={editingEvent ? (editingEvent.location || '') : (newEvent.location || '')}
+                onChange={(e) => editingEvent
+                  ? setEditingEvent({ ...editingEvent, location: e.target.value })
+                  : setNewEvent({ ...newEvent, location: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">Description <span className="font-normal">(optional)</span></label>
+              <textarea
+                rows={2}
+                placeholder="Brief details about this event…"
+                value={editingEvent ? (editingEvent.description || '') : (newEvent.description || '')}
+                onChange={(e) => editingEvent
+                  ? setEditingEvent({ ...editingEvent, description: e.target.value })
+                  : setNewEvent({ ...newEvent, description: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+              />
+            </div>
+
+            {/* Save / Cancel */}
+            {editingEvent ? (
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => setEditingEvent(null)}
+                  className="flex-1 py-2.5 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid flex items-center justify-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" /> Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!editingEvent.title.trim() || !editingEvent.date) {
+                      alert('Title and date are required.');
+                      return;
+                    }
+                    try {
+                      await onUpdateEvent(editingEvent);
+                      setEditingEvent(null);
+                    } catch {
+                      alert('Failed to update event. Please try again.');
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark flex items-center justify-center gap-1"
+                >
+                  <Check className="w-3.5 h-3.5" /> Save Changes
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={async () => {
+                  if (!newEvent.title.trim() || !newEvent.date) {
+                    alert('Title and date are required.');
+                    return;
+                  }
+                  const ev: CalendarEvent = {
+                    id: String(Date.now()),
+                    ...newEvent,
+                    createdBy: currentUser.name,
+                  };
+                  try {
+                    await onAddEvent(ev);
+                    setNewEvent(blankEvent());
+                  } catch {
+                    alert('Failed to save event. Please try again.');
+                  }
+                }}
+                className="w-full py-2.5 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
+              >
+                Add to Calendar
+              </button>
+            )}
+          </div>
+
+          {/* Event list */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">
+              All Events ({events.length})
+            </h3>
+
+            {events.length === 0 ? (
+              <div className="bg-white border border-brand-border rounded-xl p-6 text-center text-xs text-brand-text-light italic">
+                No events yet. Add your first one above.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[...events].sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
+                  <div key={ev.id} className="bg-white rounded-xl border border-brand-border p-3.5 flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-brand-text truncate">{ev.title}</div>
+                      <div className="text-[11px] text-brand-text-light mt-0.5">
+                        {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {!ev.allDay && ev.time ? ` · ${ev.time}` : ev.allDay ? ' · All day' : ''}
+                        {ev.location ? ` · ${ev.location}` : ''}
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => setEditingEvent({ ...ev })}
+                        className="p-1.5 border border-brand-border hover:bg-brand-cream rounded-lg text-brand-text-light hover:text-brand-text cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Delete this event permanently?')) {
+                            try { await onDeleteEvent(ev.id); } catch { alert('Failed to delete.'); }
+                          }
+                        }}
+                        className="p-1.5 border border-transparent hover:border-red-200 text-red-400 hover:bg-red-50 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

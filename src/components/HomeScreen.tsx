@@ -1,12 +1,13 @@
 import React from 'react';
-import { User, Post, DocumentItem } from '../types';
-import { Mic, Megaphone, FileText, ChevronRight, Eye } from 'lucide-react';
+import { User, Post, DocumentItem, CalendarEvent } from '../types';
+import { Mic, Megaphone, FileText, ChevronRight, Eye, Calendar, MapPin } from 'lucide-react';
 
 interface HomeScreenProps {
   currentUser: User;
   users: User[];
   posts: Post[];
   docs: DocumentItem[];
+  events: CalendarEvent[];
   onSetTab: (tab: string) => void;
   onViewDoc: (docId: string) => void;
   onLaunchRecord: () => void;
@@ -17,6 +18,7 @@ export default function HomeScreen({
   users,
   posts,
   docs,
+  events,
   onSetTab,
   onViewDoc,
   onLaunchRecord,
@@ -91,6 +93,30 @@ export default function HomeScreen({
 
   const upcomingBirthdays = getUpcomingBirthdays();
   const recentDocs = docs.slice(0, 3);
+
+  const todayNow = new Date();
+  todayNow.setHours(0, 0, 0, 0);
+  const todayStr = todayNow.toISOString().slice(0, 10);
+  const upcomingEvents = [...events]
+    .filter(e => e.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 3);
+
+  const fmt12 = (time?: string) => {
+    if (!time) return '';
+    const [h, m] = time.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${ampm}`;
+  };
+
+  const eventCategoryColors: Record<CalendarEvent['category'], string> = {
+    Meeting:    'bg-sky-100 text-sky-700',
+    Training:   'bg-purple-100 text-purple-700',
+    Fundraiser: 'bg-amber-100 text-amber-700',
+    Community:  'bg-brand-green-light text-brand-green-dark',
+    Holiday:    'bg-rose-100 text-rose-700',
+    Other:      'bg-gray-100 text-gray-600',
+  };
   const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'Staff';
 
   return (
@@ -155,6 +181,90 @@ export default function HomeScreen({
           <p className="text-xs text-brand-text-light mt-0.5">Capture a client or volunteer experience</p>
         </div>
         <ChevronRight className="w-5 h-5 text-brand-text-light ml-auto flex-shrink-0" />
+      </div>
+
+      {/* Calendar CTA */}
+      <div
+        onClick={() => onSetTab('calendar')}
+        className="mt-3 mx-5 bg-white rounded-2xl p-4 flex items-center gap-3.5 shadow-[0_4px_20px_rgba(75,173,75,0.10)] cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(75,173,75,0.18)] active:scale-[0.99] transition-all border border-brand-border"
+      >
+        <div className="w-12 h-12 bg-brand-green-light text-brand-green rounded-full flex items-center justify-center flex-shrink-0">
+          <Calendar className="w-5 h-5" />
+        </div>
+        <div className="text-left">
+          <h3 className="text-sm font-bold text-brand-text">View Calendar</h3>
+          <p className="text-xs text-brand-text-light mt-0.5">Browse upcoming Stewpot events</p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-brand-text-light ml-auto flex-shrink-0" />
+      </div>
+
+      {/* Upcoming Events */}
+      <div className="px-5 mt-5">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-sm font-bold text-brand-text flex items-center gap-1.5">📅 Upcoming Events</h2>
+          <button
+            onClick={() => onSetTab('calendar')}
+            className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"
+          >
+            See all
+          </button>
+        </div>
+
+        <div className="space-y-2.5">
+          {upcomingEvents.length === 0 ? (
+            <div className="bg-white rounded-xl border border-brand-border p-4 text-center text-xs text-brand-text-light italic">
+              No upcoming events scheduled.
+            </div>
+          ) : (
+            upcomingEvents.map((ev) => {
+              const evDate = new Date(ev.date + 'T00:00:00');
+              const isToday = ev.date === todayStr;
+              const dateLabel = isToday
+                ? 'Today'
+                : evDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const colorClass = eventCategoryColors[ev.category] || eventCategoryColors.Other;
+              return (
+                <div
+                  key={ev.id}
+                  onClick={() => onSetTab('calendar')}
+                  className="bg-white rounded-xl border border-brand-border p-3.5 flex items-start gap-3 cursor-pointer hover:border-brand-green/30 transition-all"
+                >
+                  {/* Date chip */}
+                  <div className={`flex-shrink-0 w-12 rounded-xl text-center py-1.5 ${isToday ? 'bg-brand-green text-white' : 'bg-brand-cream text-brand-text-mid border border-brand-border'}`}>
+                    <div className="text-[10px] font-bold uppercase tracking-wide leading-none">
+                      {evDate.toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-base font-bold leading-tight">{evDate.getDate()}</div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-brand-text truncate">{ev.title}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${colorClass}`}>
+                        {ev.category}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      {!ev.allDay && ev.time && (
+                        <span className="text-[11px] text-brand-text-light font-medium">
+                          🕐 {fmt12(ev.time)}{ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}
+                        </span>
+                      )}
+                      {ev.allDay && (
+                        <span className="text-[11px] text-brand-text-light font-medium">All day</span>
+                      )}
+                      {ev.location && (
+                        <span className="text-[11px] text-brand-text-light font-medium flex items-center gap-0.5">
+                          <MapPin className="w-2.5 h-2.5 flex-shrink-0" />{ev.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Announcements */}

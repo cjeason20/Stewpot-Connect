@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { User, Post, DocumentItem, Story, Prompt, UserRole, PostCategory } from './types';
+import { User, Post, DocumentItem, Story, Prompt, CalendarEvent, UserRole, PostCategory } from './types';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import StoriesScreen from './components/StoriesScreen';
@@ -8,8 +8,9 @@ import ResourcesScreen from './components/ResourcesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminScreen from './components/AdminScreen';
 import DirectoryScreen from './components/DirectoryScreen';
+import CalendarScreen from './components/CalendarScreen';
 
-import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users } from 'lucide-react';
+import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
@@ -22,6 +23,7 @@ export default function App() {
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   
   // Navigation states
   // 'login' | 'home' | 'stories' | 'forum' | 'resources' | 'profile' | 'admin'
@@ -193,7 +195,18 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'stories');
     });
 
-    // 5. Snapshot listener for PROMPTS
+    // 5. Snapshot listener for CALENDAR EVENTS
+    const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
+      const eList: CalendarEvent[] = [];
+      snapshot.forEach(docSnap => {
+        eList.push({ ...docSnap.data(), id: docSnap.id } as CalendarEvent);
+      });
+      setEvents(eList);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'events');
+    });
+
+    // 6. Snapshot listener for PROMPTS
     const unsubPrompts = onSnapshot(collection(db, 'prompts'), (snapshot) => {
       const pList: Prompt[] = [];
       snapshot.forEach(docSnap => {
@@ -212,6 +225,7 @@ export default function App() {
       unsubPosts();
       unsubDocs();
       unsubStories();
+      unsubEvents();
       unsubPrompts();
     };
   }, []);
@@ -312,6 +326,30 @@ export default function App() {
     }
   };
 
+  const handleAddEvent = async (e: CalendarEvent) => {
+    try {
+      await setDoc(doc(db, 'events', e.id), e);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `events/${e.id}`);
+    }
+  };
+
+  const handleUpdateEvent = async (e: CalendarEvent) => {
+    try {
+      await setDoc(doc(db, 'events', e.id), e);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `events/${e.id}`);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'events', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `events/${id}`);
+    }
+  };
+
   const handleAddPrompt = async (p: Prompt) => {
     try {
       await setDoc(doc(db, 'prompts', p.id), p);
@@ -405,6 +443,7 @@ export default function App() {
                 { id: 'stories',   label: 'Stories',     Icon: Mic,          desc: 'Record & browse stories' },
                 { id: 'forum',     label: 'Community',   Icon: MessageSquare,desc: 'Team posts & announcements' },
                 { id: 'resources',  label: 'Resources',  Icon: BookOpen,     desc: 'Documents & files' },
+                { id: 'calendar',  label: 'Calendar',   Icon: CalendarDays, desc: 'Events & schedule' },
                 { id: 'directory', label: 'Directory',  Icon: Users,        desc: 'Staff contact info' },
                 { id: 'profile',   label: 'My Profile', Icon: UserIcon,     desc: 'Settings & account' },
                 ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield, desc: 'Users, docs & controls' }] : [])
@@ -479,6 +518,7 @@ export default function App() {
                       {activeTab === 'stories'   && 'Stories'}
                       {activeTab === 'forum'     && 'Community'}
                       {activeTab === 'resources'  && 'Resources'}
+                      {activeTab === 'calendar'  && 'Calendar'}
                       {activeTab === 'directory' && 'Staff Directory'}
                       {activeTab === 'profile'   && 'My Profile'}
                       {activeTab === 'admin'     && 'Admin Panel'}
@@ -509,7 +549,7 @@ export default function App() {
                 <div className="max-w-5xl mx-auto px-6 py-6">
                   <div className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden min-h-[calc(100vh-7rem)]">
                     {activeTab === 'home' && (
-                      <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
+                      <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs} events={events}
                         onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
                     )}
                     {activeTab === 'stories' && (
@@ -520,6 +560,9 @@ export default function App() {
                     )}
                     {activeTab === 'resources' && (
                       <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
+                    )}
+                    {activeTab === 'calendar' && (
+                      <CalendarScreen events={events} />
                     )}
                     {activeTab === 'directory' && (
                       <DirectoryScreen currentUser={currentUser} users={users} />
@@ -533,6 +576,7 @@ export default function App() {
                         onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
                         onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
                         prompts={prompts} onAddPrompt={handleAddPrompt} onUpdatePrompt={handleUpdatePrompt} onDeletePrompt={handleDeletePrompt}
+                        events={events} onAddEvent={handleAddEvent} onUpdateEvent={handleUpdateEvent} onDeleteEvent={handleDeleteEvent}
                         onClose={() => setActiveTab('profile')} />
                     )}
                   </div>
@@ -564,7 +608,7 @@ export default function App() {
             {currentUser && (
               <>
                 {activeTab === 'home' && (
-                  <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
+                  <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs} events={events}
                     onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
                 )}
                 {activeTab === 'stories' && (
@@ -578,6 +622,9 @@ export default function App() {
                 {activeTab === 'resources' && (
                   <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
                 )}
+                {activeTab === 'calendar' && (
+                  <CalendarScreen events={events} />
+                )}
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
                 )}
@@ -590,6 +637,7 @@ export default function App() {
                     onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
                     onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
                     prompts={prompts} onAddPrompt={handleAddPrompt} onUpdatePrompt={handleUpdatePrompt} onDeletePrompt={handleDeletePrompt}
+                    events={events} onAddEvent={handleAddEvent} onUpdateEvent={handleUpdateEvent} onDeleteEvent={handleDeleteEvent}
                     onClose={() => setActiveTab('profile')} />
                 )}
               </>
@@ -734,19 +782,15 @@ export default function App() {
             {currentUser && (
               <>
                 {activeTab === 'home' && (
-                  <HomeScreen 
+                  <HomeScreen
                     currentUser={currentUser}
                     users={users}
                     posts={posts}
                     docs={docs}
+                    events={events}
                     onSetTab={setActiveTab}
-                    onViewDoc={(id) => {
-                      setActiveTab('resources');
-                      // Automatically triggers loading file in UI
-                    }}
-                    onLaunchRecord={() => {
-                      setActiveTab('stories');
-                    }}
+                    onViewDoc={(id) => { setActiveTab('resources'); }}
+                    onLaunchRecord={() => { setActiveTab('stories'); }}
                   />
                 )}
 
@@ -779,12 +823,16 @@ export default function App() {
                   />
                 )}
 
+                {activeTab === 'calendar' && (
+                  <CalendarScreen events={events} />
+                )}
+
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
                 )}
 
                 {activeTab === 'profile' && (
-                  <ProfileScreen 
+                  <ProfileScreen
                     currentUser={currentUser}
                     users={users}
                     stories={stories}
@@ -810,9 +858,11 @@ export default function App() {
                     onAddPrompt={handleAddPrompt}
                     onUpdatePrompt={handleUpdatePrompt}
                     onDeletePrompt={handleDeletePrompt}
-                    onClose={() => {
-                      setActiveTab('profile');
-                    }}
+                    events={events}
+                    onAddEvent={handleAddEvent}
+                    onUpdateEvent={handleUpdateEvent}
+                    onDeleteEvent={handleDeleteEvent}
+                    onClose={() => { setActiveTab('profile'); }}
                   />
                 )}
               </>

@@ -37,6 +37,19 @@ export interface Story {
   consentType: string; // 'none' | 'internal' | 'external'
 }
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;       // "YYYY-MM-DD"
+  time?: string;      // "HH:MM" 24-hour, e.g. "09:00"
+  endTime?: string;   // "HH:MM"
+  location?: string;
+  description?: string;
+  category: 'Meeting' | 'Training' | 'Fundraiser' | 'Community' | 'Holiday' | 'Other';
+  allDay?: boolean;
+  createdBy?: string;
+}
+
 export interface Prompt {
   id: string;
   text: string;
