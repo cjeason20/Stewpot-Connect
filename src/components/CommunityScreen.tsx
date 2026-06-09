@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Post, PostCategory, PostAttachment } from '../types';
-import { Send, FileText, Image as ImageIcon, Link, X, Trash2, Edit3 } from 'lucide-react';
+import { Send, FileText, Image as ImageIcon, Link, X, Trash2, Edit3, Search } from 'lucide-react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 
@@ -20,6 +20,7 @@ export default function CommunityScreen({
   onEditPost,
 }: CommunityScreenProps) {
   const [activeFilter, setActiveFilter] = useState<PostCategory | 'All'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   
   // Compose form states
@@ -141,9 +142,17 @@ export default function CommunityScreen({
     }
   };
 
-  const filteredPosts = activeFilter === 'All' 
-    ? posts 
-    : posts.filter((p) => p.cat === activeFilter);
+  const filteredPosts = posts
+    .filter((p) => activeFilter === 'All' || p.cat === activeFilter)
+    .filter((p) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        p.text.toLowerCase().includes(q) ||
+        p.author.toLowerCase().includes(q) ||
+        p.cat.toLowerCase().includes(q)
+      );
+    });
 
   const initials = currentUser.initials || currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
 
@@ -169,8 +178,27 @@ export default function CommunityScreen({
         </div>
       </div>
 
+      {/* Search */}
+      <div className="px-5 pt-4">
+        <div className="flex items-center gap-2.5 bg-white border border-brand-border rounded-xl px-3.5 py-2.5">
+          <Search className="w-4 h-4 text-brand-text-light flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search posts by keyword or author…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 text-xs text-brand-text bg-transparent focus:outline-none placeholder:text-brand-text-light"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-brand-text-light hover:text-brand-text focus:outline-none cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Categories Filter Row */}
-      <div className="flex gap-2.5 overflow-x-auto no-scrollbar px-5 pt-4 pb-2 flex-shrink-0">
+      <div className="flex gap-2.5 overflow-x-auto no-scrollbar px-5 pt-3 pb-2 flex-shrink-0">
         {categories.map((c) => (
           <button
             key={c}

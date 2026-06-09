@@ -29,6 +29,7 @@ export interface Story {
   audioUrl?: string;
   author: string;
   authorId?: string;
+  interviewee?: string;
   notes?: string;
   hasConsent: boolean;
   consentType: string; // 'none' | 'internal' | 'external'

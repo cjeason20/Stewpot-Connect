@@ -24,6 +24,7 @@ export default function StoriesScreen({
   // Form states
   const [title, setTitle] = useState('');
   const [program, setProgram] = useState('');
+  const [interviewee, setInterviewee] = useState('');
   const [consentType, setConsentType] = useState('none'); // 'none' | 'internal' | 'external'
   const [notes, setNotes] = useState('');
 
@@ -112,6 +113,7 @@ export default function StoriesScreen({
     setStep(1);
     setTitle('');
     setProgram('');
+    setInterviewee('');
     setConsentType('none');
     setNotes('');
     setIsRecording(false);
@@ -142,6 +144,7 @@ export default function StoriesScreen({
       consentType,
       author: currentUser.name,
       authorId: currentUser.id,
+      ...(interviewee.trim() ? { interviewee: interviewee.trim() } : {}),
     };
 
     onAddStory(newStory);
@@ -221,6 +224,11 @@ export default function StoriesScreen({
                       <span className="text-[10px] text-brand-text-light">{s.date}</span>
                     </div>
                     <h3 className="text-sm font-bold text-brand-text mt-2">{s.title}</h3>
+                    {s.interviewee && (
+                      <p className="text-[10px] text-brand-text-light mt-1 font-medium">
+                        🎤 {s.interviewee}
+                      </p>
+                    )}
                     {s.notes && (
                       <p className="text-xs text-brand-text-mid mt-1 line-clamp-3 leading-relaxed">
                         {s.notes}
@@ -398,6 +406,19 @@ export default function StoriesScreen({
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-text mb-2">
+                    3. Person(s) Being Interviewed <span className="font-normal text-brand-text-light">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={interviewee}
+                    onChange={(e) => setInterviewee(e.target.value)}
+                    placeholder="e.g., John D., Maria S."
+                    className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+                  />
                 </div>
 
                 <button
