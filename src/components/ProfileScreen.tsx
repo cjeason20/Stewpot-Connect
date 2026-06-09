@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { User, Story, DocumentItem } from '../types';
-import { Camera, Calendar, Sliders, Bell, Lock, LogOut, FileText, Mic, Users, Check, X, ShieldAlert, ChevronRight } from 'lucide-react';
+import { Camera, Bell, Lock, LogOut, FileText, Mic, Users, X, ChevronRight, Move } from 'lucide-react';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 
 interface ProfileScreenProps {
   currentUser: User;
@@ -27,7 +29,12 @@ export default function ProfileScreen({
   const [email, setEmail] = useState(currentUser.email || '');
   const [title, setTitle] = useState(currentUser.title || '');
   const [dept, setDept] = useState(currentUser.dept || '');
-  
+
+  // Photo crop modal
+  const [cropModal, setCropModal] = useState<{ objectUrl: string; file: File; posX: number; posY: number } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const dragState = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
+
   // Settings Modals
   const [activeModal, setActiveModal] = useState<'none' | 'notif' | 'privacy'>('none');
   const [passwordOld, setPasswordOld] = useState('');
@@ -78,25 +85,84 @@ export default function ProfileScreen({
     alert('Your profile changes have been registered successfully!');
   };
 
+  // Open the crop/position modal when a file is chosen
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      if (loadEvent.target?.result) {
-        const updatedUser: User = {
-          ...currentUser,
-          photo: loadEvent.target.result as string,
-          photoPosX: '50',
-          photoPosY: '50'
-        };
-        onUpdateProfile(updatedUser);
-        alert('Photo uploaded successfully!');
-      }
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setCropModal({ objectUrl, file, posX: 50, posY: 50 });
+    e.target.value = '';
   };
+
+  // Compress image to JPEG via canvas before uploading
+  const compressImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 900;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error('Canvas conversion failed')),
+          'image/jpeg', 0.82
+        );
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+
+  // Upload compressed photo to Firebase Storage and save URL + position
+  const handleCropSave = async () => {
+    if (!cropModal) return;
+    setIsUploading(true);
+    try {
+      const blob = await compressImage(cropModal.file);
+      const photoRef = storageRef(storage, `photos/${currentUser.id}/${Date.now()}.jpg`);
+      await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
+      const photoUrl = await getDownloadURL(photoRef);
+      await onUpdateProfile({
+        ...currentUser,
+        photo: photoUrl,
+        photoPosX: String(Math.round(cropModal.posX)),
+        photoPosY: String(Math.round(cropModal.posY)),
+      });
+      URL.revokeObjectURL(cropModal.objectUrl);
+      setCropModal(null);
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Drag-to-reposition handlers for the crop preview
+  const onDragStart = useCallback((clientX: number, clientY: number) => {
+    if (!cropModal) return;
+    dragState.current = { startX: clientX, startY: clientY, startPosX: cropModal.posX, startPosY: cropModal.posY };
+  }, [cropModal]);
+
+  const onDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!dragState.current || !cropModal) return;
+    const SENSITIVITY = 0.35; // % change per pixel dragged
+    const dx = (dragState.current.startX - clientX) * SENSITIVITY;
+    const dy = (dragState.current.startY - clientY) * SENSITIVITY;
+    setCropModal(prev => prev ? {
+      ...prev,
+      posX: Math.max(0, Math.min(100, dragState.current!.startPosX + dx)),
+      posY: Math.max(0, Math.min(100, dragState.current!.startPosY + dy)),
+    } : null);
+  }, [cropModal]);
+
+  const onDragEnd = useCallback(() => { dragState.current = null; }, []);
 
   const handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -402,6 +468,62 @@ export default function ProfileScreen({
                 className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs mt-2"
               >
                 Save Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHOTO CROP / POSITION MODAL */}
+      {cropModal && (
+        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-center px-5 py-4 border-b border-brand-border">
+              <div>
+                <h3 className="text-sm font-bold font-poppins text-brand-text">Position Your Photo</h3>
+                <p className="text-[10px] text-brand-text-light mt-0.5">Drag to center your face in the circle</p>
+              </div>
+              <X className="w-5 h-5 text-brand-text-light cursor-pointer" onClick={() => { URL.revokeObjectURL(cropModal.objectUrl); setCropModal(null); }} />
+            </div>
+
+            {/* Drag preview */}
+            <div className="flex flex-col items-center py-7 bg-gray-100">
+              <div
+                className="w-44 h-44 rounded-full border-4 border-white shadow-xl overflow-hidden cursor-grab active:cursor-grabbing select-none"
+                style={{
+                  backgroundImage: `url(${cropModal.objectUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: `${cropModal.posX}% ${cropModal.posY}%`,
+                }}
+                onMouseDown={(e) => { e.preventDefault(); onDragStart(e.clientX, e.clientY); }}
+                onMouseMove={(e) => { if (dragState.current) onDragMove(e.clientX, e.clientY); }}
+                onMouseUp={onDragEnd}
+                onMouseLeave={onDragEnd}
+                onTouchStart={(e) => { onDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+                onTouchMove={(e) => { e.preventDefault(); onDragMove(e.touches[0].clientX, e.touches[0].clientY); }}
+                onTouchEnd={onDragEnd}
+              />
+              <div className="flex items-center gap-1.5 mt-4 text-[10px] text-gray-500 font-medium">
+                <Move className="w-3.5 h-3.5" /> Drag to reposition
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 px-5 py-4 border-t border-brand-border">
+              <button
+                onClick={() => { URL.revokeObjectURL(cropModal.objectUrl); setCropModal(null); }}
+                className="flex-1 py-2.5 border border-brand-border rounded-xl text-xs font-bold text-brand-text-mid"
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropSave}
+                disabled={isUploading}
+                className="flex-1 py-2.5 bg-brand-green text-white rounded-xl text-xs font-bold shadow disabled:opacity-60"
+              >
+                {isUploading ? 'Saving…' : 'Save Photo'}
               </button>
             </div>
           </div>
