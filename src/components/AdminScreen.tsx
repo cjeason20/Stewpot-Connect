@@ -100,20 +100,21 @@ export default function AdminScreen({
   const [driveFolderUrl, setDriveFolderUrl] = useState('');
 
   const jobTitles = [
-    'Director', 'Assistant Director', 'Executive Director', 'Chief Operating Officer',
-    'Director of Special Events & Communications', 'Director of Shelter Services', 'Director of Case Management',
-    'Manager', 'Grants & Admin Manager', 'Shelter Supervisor', 'Shelter Relief Staff',
-    'Case Manager', 'Housing Stability Case Manager', 'Housing Navigator',
-    'Outreach Specialist', 'Program Staff', 'Receptionist', 'Contract Employee',
-    'Assistant', 'Custodian', 'Volunteer Assistant'
+    'Assistant', 'Assistant Director', 'Case Manager', 'Chief Operating Officer',
+    'Contract Employee', 'Custodian', 'Director', 'Director of Case Management',
+    'Director of Shelter Services', 'Director of Special Events & Communications',
+    'Executive Director', 'Grants & Admin Manager', 'Housing Navigator',
+    'Housing Stability Case Manager', 'Manager', 'Outreach Specialist',
+    'Program Staff', 'Receptionist', 'Shelter Relief Staff', 'Shelter Supervisor',
+    'Volunteer Assistant',
   ];
 
   const departments = [
-    'Community Kitchen', 'Clothing Closet', 'Food Pantry', 'Housing Assistance',
-    'Opportunity Center', "Matt's House", 'Billy Brumfield Shelter',
-    'Special Events & Communications', 'Teen Services', "Children's Services",
-    'Meals on Wheels', 'Volunteer Programs', 'Street Outreach', 'Transitional Shelter',
-    'Vehicles & Maintenance', 'Admin'
+    'Admin', 'Billy Brumfield Shelter', "Children's Services", 'Clothing Closet',
+    'Community Kitchen', 'Food Pantry', 'Housing Assistance', "Matt's House",
+    'Meals on Wheels', 'Opportunity Center', 'Special Events & Communications',
+    'Street Outreach', 'Teen Services', 'Transitional Shelter',
+    'Vehicles & Maintenance', 'Volunteer Programs',
   ];
 
   const handleAddUserSubmit = async (e: React.FormEvent) => {

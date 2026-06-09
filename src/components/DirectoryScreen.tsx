@@ -28,6 +28,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
   }, {});
 
   const deptKeys = Object.keys(grouped).sort();
+  deptKeys.forEach(k => grouped[k].sort((a, b) => a.name.localeCompare(b.name)));
 
   const avatarColors = [
     'bg-[#4BAD47]', 'bg-[#2196F3]', 'bg-[#FF7043]',
