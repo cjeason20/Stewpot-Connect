@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { User, Story } from '../types';
-import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2, ImagePlus, X } from 'lucide-react';
+import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2, ImagePlus, X, Music2 } from 'lucide-react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 import { syncToDrive } from '../lib/driveSync';
@@ -41,10 +41,27 @@ export default function StoriesScreen({
   const [recDuration, setRecDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  // Edit-modal upload states
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const [editRemovePhoto, setEditRemovePhoto] = useState(false);
+  const [editAudioFile, setEditAudioFile] = useState<File | null>(null);
+  const [editRemoveAudio, setEditRemoveAudio] = useState(false);
+
   // References
   const mediaRecorderRef = useRef<any>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<any>(null);
+
+  const closeEditModal = () => {
+    setEditingStory(null);
+    setEditPhotoFile(null);
+    setEditPhotoPreview(null);
+    setEditRemovePhoto(false);
+    setEditAudioFile(null);
+    setEditRemoveAudio(false);
+  };
 
   const programsList = [
     'Community Kitchen', 'Clothing Closet', 'Food Pantry', 'Housing Assistance',
@@ -322,7 +339,14 @@ export default function StoriesScreen({
                       {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
                         <div className="flex items-center gap-1.5 ml-2">
                           <button
-                            onClick={() => setEditingStory({ ...s })}
+                            onClick={() => {
+                              setEditPhotoFile(null);
+                              setEditPhotoPreview(null);
+                              setEditRemovePhoto(false);
+                              setEditAudioFile(null);
+                              setEditRemoveAudio(false);
+                              setEditingStory({ ...s });
+                            }}
                             className="p-1.5 hover:bg-brand-green-light text-brand-text-light hover:text-brand-green-dark rounded-lg cursor-pointer focus:outline-none"
                             title="Edit story"
                           >
@@ -348,76 +372,273 @@ export default function StoriesScreen({
 
           {/* ── Edit Story Modal ── */}
           {editingStory && (
-            <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-brand-border">
+            <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50">
+              <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[92dvh]">
+
+                {/* Header */}
+                <div className="flex justify-between items-center px-5 pt-5 pb-3 border-b border-brand-border flex-shrink-0">
                   <h3 className="text-sm font-bold font-poppins text-brand-text">Edit Story</h3>
-                  <button onClick={() => setEditingStory(null)} className="text-brand-text-light hover:text-brand-text p-1 cursor-pointer focus:outline-none">✕</button>
+                  <button onClick={closeEditModal} className="text-brand-text-light hover:text-brand-text p-1 cursor-pointer focus:outline-none">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Story Title</label>
-                  <input
-                    type="text"
-                    value={editingStory.title}
-                    onChange={(e) => setEditingStory({ ...editingStory, title: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
-                  />
-                </div>
+                {/* Scrollable body */}
+                <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4 no-scrollbar">
 
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Program</label>
-                  <select
-                    value={editingStory.program}
-                    onChange={(e) => setEditingStory({ ...editingStory, program: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
+                  {/* Title */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Story Title</label>
+                    <input
+                      type="text"
+                      value={editingStory.title}
+                      onChange={(e) => setEditingStory({ ...editingStory, title: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Program */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Program</label>
+                    <select
+                      value={editingStory.program}
+                      onChange={(e) => setEditingStory({ ...editingStory, program: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                    >
+                      {programsList.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Interviewee */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">
+                      Person(s) Interviewed <span className="font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingStory.interviewee || ''}
+                      onChange={(e) => setEditingStory({ ...editingStory, interviewee: e.target.value })}
+                      placeholder="e.g., John D., Maria S."
+                      className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Consent Type */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Consent Type</label>
+                    <select
+                      value={editingStory.consentType}
+                      onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: e.target.value !== 'none' })}
+                      className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                    >
+                      <option value="external">External / Public Communications</option>
+                      <option value="internal">Internal Staff Training Only</option>
+                      <option value="restricted">Restricted Archivist Only</option>
+                    </select>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Notes</label>
+                    <textarea
+                      value={editingStory.notes || ''}
+                      onChange={(e) => setEditingStory({ ...editingStory, notes: e.target.value })}
+                      rows={4}
+                      placeholder="Case notes or client summary…"
+                      className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Photo section */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">📷 Story Photo</label>
+
+                    {/* Show current or new preview */}
+                    {(editPhotoPreview || (editingStory.photoUrl && !editRemovePhoto)) ? (
+                      <div className="relative">
+                        <img
+                          src={editPhotoPreview || editingStory.photoUrl}
+                          alt="Story photo"
+                          className="w-full h-36 object-cover rounded-xl border border-brand-border"
+                        />
+                        <div className="absolute top-2 right-2 flex gap-1.5">
+                          {/* Replace */}
+                          <label className="bg-white/90 hover:bg-white text-brand-text rounded-lg px-2 py-1 text-[11px] font-semibold cursor-pointer shadow-sm border border-brand-border">
+                            Replace
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setEditPhotoFile(file);
+                                setEditPhotoPreview(URL.createObjectURL(file));
+                                setEditRemovePhoto(false);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditPhotoFile(null);
+                              setEditPhotoPreview(null);
+                              setEditRemovePhoto(true);
+                            }}
+                            className="bg-black/50 text-white rounded-full p-1 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center gap-1.5 py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light/40 rounded-xl bg-brand-cream/60 cursor-pointer transition-all">
+                        <ImagePlus className="w-5 h-5 text-brand-green" />
+                        <span className="text-xs font-semibold text-brand-text">
+                          {editRemovePhoto ? 'Add a replacement photo' : 'Add a photo'}
+                        </span>
+                        <span className="text-[11px] text-brand-text-light">JPG, PNG, HEIC</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setEditPhotoFile(file);
+                            setEditPhotoPreview(URL.createObjectURL(file));
+                            setEditRemovePhoto(false);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Audio section */}
+                  <div>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">🎙️ Audio Recording</label>
+
+                    {(editAudioFile || (editingStory.audioUrl && !editRemoveAudio)) ? (
+                      <div className="bg-brand-cream border border-brand-border rounded-xl p-3 space-y-2">
+                        {editAudioFile ? (
+                          <div className="flex items-center gap-2 text-xs text-brand-text font-semibold">
+                            <Music2 className="w-4 h-4 text-brand-green flex-shrink-0" />
+                            <span className="truncate">{editAudioFile.name}</span>
+                          </div>
+                        ) : (
+                          <audio src={editingStory.audioUrl} controls className="w-full h-8" />
+                        )}
+                        <div className="flex gap-2">
+                          <label className="flex-1 text-center py-1.5 border border-brand-border bg-white hover:bg-brand-cream rounded-lg text-[11px] font-semibold text-brand-text cursor-pointer">
+                            Replace File
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setEditAudioFile(file);
+                                setEditRemoveAudio(false);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setEditAudioFile(null); setEditRemoveAudio(true); }}
+                            className="flex-1 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg text-[11px] font-semibold text-red-600 cursor-pointer"
+                          >
+                            Remove Audio
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center gap-1.5 py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light/40 rounded-xl bg-brand-cream/60 cursor-pointer transition-all">
+                        <UploadCloud className="w-5 h-5 text-brand-green" />
+                        <span className="text-xs font-semibold text-brand-text">Upload audio file</span>
+                        <span className="text-[11px] text-brand-text-light">MP3, M4A, WAV, OGG, WebM</span>
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setEditAudioFile(file);
+                            setEditRemoveAudio(false);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                </div>{/* end scrollable body */}
+
+                {/* Save button pinned at bottom */}
+                <div className="px-5 pb-5 pt-3 border-t border-brand-border flex-shrink-0">
+                  <button
+                    disabled={isSavingEdit}
+                    onClick={async () => {
+                      if (!editingStory.title.trim() || !editingStory.program) {
+                        alert('Title and program are required.');
+                        return;
+                      }
+                      setIsSavingEdit(true);
+                      try {
+                        let updated = { ...editingStory };
+
+                        // Handle photo
+                        if (editPhotoFile) {
+                          const blob = await compressImage(editPhotoFile);
+                          const fileName = `${editingStory.id}.jpg`;
+                          const photoRef = storageRef(storage, `story-photos/${fileName}`);
+                          await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
+                          updated.photoUrl = await getDownloadURL(photoRef);
+                          syncToDrive(updated.photoUrl, fileName, 'story-photos');
+                        } else if (editRemovePhoto) {
+                          updated = { ...updated, photoUrl: undefined };
+                        }
+
+                        // Handle audio
+                        if (editAudioFile) {
+                          const audioFileName = `${editingStory.id}_edit_${Date.now()}.${editAudioFile.name.split('.').pop() || 'audio'}`;
+                          const audioRef = storageRef(storage, `story-audio/${audioFileName}`);
+                          await uploadBytes(audioRef, editAudioFile, { contentType: editAudioFile.type || 'audio/mpeg' });
+                          updated.audioUrl = await getDownloadURL(audioRef);
+                          syncToDrive(updated.audioUrl, audioFileName, 'audio');
+                        } else if (editRemoveAudio) {
+                          updated = { ...updated, audioUrl: undefined };
+                        }
+
+                        await onUpdateStory(updated);
+                        closeEditModal();
+                      } catch (err) {
+                        console.error('Edit save error:', err);
+                        alert('Failed to save changes. Please try again.');
+                      } finally {
+                        setIsSavingEdit(false);
+                      }
+                    }}
+                    className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark disabled:opacity-60 flex items-center justify-center gap-1.5"
                   >
-                    {['Community Kitchen','Clothing Closet','Food Pantry','Housing Assistance',"Matt's House",'Billy Brumfield Shelter','Special Events & Communications','Teen Services',"Children's Services",'Meals on Wheels','Volunteer Programs','Admin'].map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                    {isSavingEdit ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        Saving…
+                      </>
+                    ) : 'Save Changes'}
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Consent Type</label>
-                  <select
-                    value={editingStory.consentType}
-                    onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: e.target.value !== 'none' })}
-                    className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs"
-                  >
-                    <option value="external">External / Public Communications</option>
-                    <option value="internal">Internal Staff Training Only</option>
-                    <option value="restricted">Restricted Archivist Only</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Notes</label>
-                  <textarea
-                    value={editingStory.notes || ''}
-                    onChange={(e) => setEditingStory({ ...editingStory, notes: e.target.value })}
-                    rows={4}
-                    className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none"
-                  />
-                </div>
-
-                <button
-                  onClick={async () => {
-                    if (!editingStory.title.trim() || !editingStory.program) {
-                      alert('Title and program are required.');
-                      return;
-                    }
-                    try {
-                      await onUpdateStory(editingStory);
-                      setEditingStory(null);
-                    } catch {
-                      alert('Failed to save changes. Please try again.');
-                    }
-                  }}
-                  className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
-                >
-                  Save Changes
-                </button>
               </div>
             </div>
           )}
