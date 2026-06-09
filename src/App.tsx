@@ -314,12 +314,11 @@ export default function App() {
     (window.navigator as any).standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches;
 
-  // In standalone PWA mode, force green on the root elements so the
-  // transparent status bar area never shows a white/grey background.
-  // CSS @media (display-mode: standalone) is unreliable on iOS < 16.4.
+  // In standalone PWA mode, a dedicated green strip covers the transparent
+  // status bar area. Set root backgrounds to cream to match the app.
   if (isStandalone) {
-    document.documentElement.style.backgroundColor = '#4BAD4B';
-    document.body.style.backgroundColor = '#4BAD4B';
+    document.documentElement.style.backgroundColor = '#FAFAF7';
+    document.body.style.backgroundColor = '#FAFAF7';
   }
 
   return (
@@ -502,10 +501,13 @@ export default function App() {
           No phone mockup, no fake status bar — clean native-style UI
       ============================================================ */}
       {isStandalone && (
-        <div className="lg:hidden flex flex-col bg-brand-green" style={{ height: '100dvh' }}>
+        <div className="lg:hidden flex flex-col bg-brand-cream" style={{ height: '100dvh' }}>
 
-          {/* Screens — pushed below the transparent status bar */}
-          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          {/* Green strip that fills the area behind the transparent status bar */}
+          <div className="flex-shrink-0 bg-brand-green" style={{ height: 'env(safe-area-inset-top)' }} />
+
+          {/* Screens */}
+          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
             {activeTab === 'login' && (
               <LoginScreen users={users}
                 onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
