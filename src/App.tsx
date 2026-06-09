@@ -563,6 +563,7 @@ export default function App() {
                 { id: 'home',      label: 'Home',      Icon: Home },
                 { id: 'stories',   label: 'Stories',   Icon: Mic },
                 { id: 'forum',     label: 'Community', Icon: MessageSquare },
+                { id: 'resources', label: 'Resources', Icon: BookOpen },
                 { id: 'directory', label: 'Directory', Icon: Users },
                 { id: 'profile',   label: 'Profile',   Icon: UserIcon },
               ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
@@ -800,6 +801,15 @@ export default function App() {
                 <MessageSquare className={`w-5.5 h-5.5 ${activeTab === 'forum' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Community
                 {activeTab === 'forum' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('resources')}
+                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'resources' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+              >
+                <BookOpen className={`w-5.5 h-5.5 ${activeTab === 'resources' ? 'text-brand-green' : 'text-brand-text-light'}`} />
+                Resources
+                {activeTab === 'resources' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
               </button>
 
               <button
