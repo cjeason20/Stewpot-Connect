@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Green rounded background -->
+  <rect width="512" height="512" rx="96" fill="#4BAD47"/>
+
+  <!-- Left side handle -->
+  <rect x="92" y="262" width="52" height="38" rx="12" fill="white"/>
+  <!-- Right side handle -->
+  <rect x="368" y="262" width="52" height="38" rx="12" fill="white"/>
+
+  <!-- Pot body -->
+  <path d="M148 265 Q148 420 256 420 Q364 420 364 265 Z" fill="white"/>
+  <rect x="148" y="245" width="216" height="32" rx="4" fill="white"/>
+
+  <!-- Lid base ellipse -->
+  <ellipse cx="256" cy="242" rx="118" ry="20" fill="white"/>
+
+  <!-- Lid dome -->
+  <path d="M156 242 Q156 190 256 183 Q356 190 356 242 Z" fill="white"/>
+
+  <!-- Lid knob stem -->
+  <rect x="244" y="148" width="24" height="40" rx="8" fill="white"/>
+  <!-- Lid knob top -->
+  <ellipse cx="256" cy="148" rx="22" ry="14" fill="white"/>
+
+  <!-- Heart 1 (small, top right) -->
+  <path d="M390 128 C390 120 400 114 404 124 C408 114 418 120 418 128 C418 138 404 150 404 150 C404 150 390 138 390 128Z" fill="white"/>
+
+  <!-- Heart 2 (smaller, further right) -->
+  <path d="M410 105 C410 99 418 94 421 102 C424 94 432 99 432 105 C432 113 421 122 421 122 C421 122 410 113 410 105Z" fill="white"/>
+</svg>
