@@ -494,7 +494,7 @@ export default function App() {
           No phone mockup, no fake status bar — clean native-style UI
       ============================================================ */}
       {isStandalone && (
-        <div className="lg:hidden flex flex-col bg-brand-cream" style={{ height: '100dvh' }}>
+        <div className="lg:hidden flex flex-col bg-brand-green" style={{ height: '100dvh' }}>
 
           {/* Screens */}
           <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
