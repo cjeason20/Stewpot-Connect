@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { User, DocumentItem, UserRole } from '../types';
-import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud } from 'lucide-react';
+import { User, DocumentItem, Prompt, UserRole } from '../types';
+import { ArrowLeft, UserPlus, FileText, Trash2, Edit3, Mail, UploadCloud, PlusCircle, Check, X } from 'lucide-react';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -8,11 +8,15 @@ interface AdminScreenProps {
   currentUser: User;
   users: User[];
   docs: DocumentItem[];
+  prompts: Prompt[];
   onAddUser: (u: User) => Promise<void>;
   onUpdateUser: (u: User) => Promise<void>;
   onDeleteUser: (id: string) => Promise<void>;
   onAddDoc: (d: DocumentItem) => Promise<void>;
   onDeleteDoc: (id: string) => void;
+  onAddPrompt: (p: Prompt) => Promise<void>;
+  onUpdatePrompt: (p: Prompt) => Promise<void>;
+  onDeletePrompt: (id: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -20,14 +24,18 @@ export default function AdminScreen({
   currentUser,
   users,
   docs,
+  prompts,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
   onAddDoc,
   onDeleteDoc,
+  onAddPrompt,
+  onUpdatePrompt,
+  onDeletePrompt,
   onClose,
 }: AdminScreenProps) {
-  const [activeTab, setActiveTab] = useState<'users' | 'docs'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'docs' | 'prompts'>('users');
   
   // New User Form States
   const [newUserName, setNewUserName] = useState('');
@@ -64,6 +72,11 @@ export default function AdminScreen({
 
   // Edit User Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Prompt management state
+  const [newPromptText, setNewPromptText] = useState('');
+  const [newPromptCategory, setNewPromptCategory] = useState('');
+  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
 
   // New Document upload configurations
   const [docDisplayName, setDocDisplayName] = useState('');
@@ -230,13 +243,19 @@ export default function AdminScreen({
           onClick={() => setActiveTab('users')}
           className={`flex-1 py-3 text-xs font-bold text-center border-b-2 focus:outline-none cursor-pointer transition-all ${activeTab === 'users' ? 'text-brand-green-dark border-brand-green' : 'text-brand-text-light border-transparent'}`}
         >
-          👥 Member Directory
+          👥 Members
         </button>
         <button
           onClick={() => setActiveTab('docs')}
           className={`flex-1 py-3 text-xs font-bold text-center border-b-2 focus:outline-none cursor-pointer transition-all ${activeTab === 'docs' ? 'text-brand-green-dark border-brand-green' : 'text-brand-text-light border-transparent'}`}
         >
-          📁 Docs Directory
+          📁 Docs
+        </button>
+        <button
+          onClick={() => setActiveTab('prompts')}
+          className={`flex-1 py-3 text-xs font-bold text-center border-b-2 focus:outline-none cursor-pointer transition-all ${activeTab === 'prompts' ? 'text-brand-green-dark border-brand-green' : 'text-brand-text-light border-transparent'}`}
+        >
+          🎙️ Prompts
         </button>
       </div>
 
@@ -690,6 +709,171 @@ export default function AdminScreen({
                 ))
               )}
             </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* PROMPTS ADMIN PANEL */}
+      {activeTab === 'prompts' && (
+        <div className="p-5 space-y-5">
+
+          {/* Add new prompt */}
+          <div className="bg-white rounded-2xl border border-brand-border p-5 space-y-3.5 shadow-sm">
+            <div className="flex items-center gap-2 text-brand-green font-bold text-xs pb-1 border-b border-brand-border">
+              <PlusCircle className="w-4 h-4" /> Add Interview Prompt
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">Prompt Text</label>
+              <textarea
+                value={newPromptText}
+                onChange={(e) => setNewPromptText(e.target.value)}
+                placeholder='e.g. "How did you first hear about Stewpot, and what difference has it made in your life?"'
+                rows={3}
+                className="w-full px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">Program / Category Tag <span className="font-normal">(optional)</span></label>
+              <select
+                value={newPromptCategory}
+                onChange={(e) => setNewPromptCategory(e.target.value)}
+                className="w-full px-2.5 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+              >
+                <option value="">General (all programs)</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!newPromptText.trim()) {
+                  alert('Prompt text is required.');
+                  return;
+                }
+                const p: Prompt = {
+                  id: String(Date.now()),
+                  text: newPromptText.trim(),
+                  createdAt: new Date().toISOString(),
+                  ...(newPromptCategory ? { category: newPromptCategory } : {}),
+                };
+                try {
+                  await onAddPrompt(p);
+                  setNewPromptText('');
+                  setNewPromptCategory('');
+                } catch {
+                  alert('Failed to save prompt. Please try again.');
+                }
+              }}
+              className="w-full py-2.5 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
+            >
+              Save Prompt
+            </button>
+          </div>
+
+          {/* Prompt list */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">
+              All Prompts ({prompts.length})
+            </h3>
+
+            {prompts.length === 0 ? (
+              <div className="bg-white border border-brand-border rounded-xl p-6 text-center text-xs text-brand-text-light italic">
+                No prompts yet. Add your first one above.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {prompts.map((p) => (
+                  <div key={p.id} className="bg-white rounded-xl border border-brand-border p-4 space-y-2">
+
+                    {editingPrompt?.id === p.id ? (
+                      /* Inline edit mode */
+                      <div className="space-y-2.5">
+                        <textarea
+                          value={editingPrompt.text}
+                          onChange={(e) => setEditingPrompt({ ...editingPrompt, text: e.target.value })}
+                          rows={3}
+                          className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white"
+                        />
+                        <select
+                          value={editingPrompt.category || ''}
+                          onChange={(e) => setEditingPrompt({ ...editingPrompt, category: e.target.value || undefined })}
+                          className="w-full px-2.5 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
+                        >
+                          <option value="">General (all programs)</option>
+                          {departments.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              if (!editingPrompt.text.trim()) {
+                                alert('Prompt text cannot be empty.');
+                                return;
+                              }
+                              try {
+                                await onUpdatePrompt(editingPrompt);
+                                setEditingPrompt(null);
+                              } catch {
+                                alert('Failed to update prompt. Please try again.');
+                              }
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-brand-green text-white font-bold rounded-lg text-xs hover:bg-brand-green-dark"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Save
+                          </button>
+                          <button
+                            onClick={() => setEditingPrompt(null)}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs font-semibold text-brand-text-mid"
+                          >
+                            <X className="w-3.5 h-3.5" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* View mode */
+                      <>
+                        <p className="text-xs text-brand-text leading-relaxed">"{p.text}"</p>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${p.category ? 'bg-brand-green-light text-brand-green-dark' : 'bg-gray-100 text-brand-text-light'}`}>
+                            {p.category || 'General'}
+                          </span>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => setEditingPrompt({ ...p })}
+                              className="p-1.5 border border-brand-border hover:bg-brand-cream rounded-lg text-brand-text-light hover:text-brand-text cursor-pointer"
+                              title="Edit prompt"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm('Delete this prompt permanently?')) {
+                                  try {
+                                    await onDeletePrompt(p.id);
+                                  } catch {
+                                    alert('Failed to delete prompt. Please try again.');
+                                  }
+                                }
+                              }}
+                              className="p-1.5 border border-transparent hover:border-red-200 text-red-400 hover:bg-red-50 rounded-lg cursor-pointer"
+                              title="Delete prompt"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

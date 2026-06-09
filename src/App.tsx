@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { User, Post, DocumentItem, Story, UserRole, PostCategory } from './types';
+import { User, Post, DocumentItem, Story, Prompt, UserRole, PostCategory } from './types';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import StoriesScreen from './components/StoriesScreen';
@@ -21,6 +21,7 @@ export default function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
   
   // Navigation states
   // 'login' | 'home' | 'stories' | 'forum' | 'resources' | 'profile' | 'admin'
@@ -192,12 +193,26 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'stories');
     });
 
+    // 5. Snapshot listener for PROMPTS
+    const unsubPrompts = onSnapshot(collection(db, 'prompts'), (snapshot) => {
+      const pList: Prompt[] = [];
+      snapshot.forEach(docSnap => {
+        pList.push({ ...docSnap.data(), id: docSnap.id } as Prompt);
+      });
+      // Sort by createdAt ascending so oldest appear first
+      pList.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+      setPrompts(pList);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'prompts');
+    });
+
     // Clean up callbacks
     return () => {
       unsubUsers();
       unsubPosts();
       unsubDocs();
       unsubStories();
+      unsubPrompts();
     };
   }, []);
 
@@ -294,6 +309,30 @@ export default function App() {
     } catch (e) {
       console.error('Delete story error:', e);
       alert('Failed to delete story. Please check your connection and try again.');
+    }
+  };
+
+  const handleAddPrompt = async (p: Prompt) => {
+    try {
+      await setDoc(doc(db, 'prompts', p.id), p);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, `prompts/${p.id}`);
+    }
+  };
+
+  const handleUpdatePrompt = async (p: Prompt) => {
+    try {
+      await setDoc(doc(db, 'prompts', p.id), p);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `prompts/${p.id}`);
+    }
+  };
+
+  const handleDeletePrompt = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'prompts', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `prompts/${id}`);
     }
   };
 
@@ -474,7 +513,7 @@ export default function App() {
                         onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
                     )}
                     {activeTab === 'stories' && (
-                      <StoriesScreen currentUser={currentUser} stories={stories} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
+                      <StoriesScreen currentUser={currentUser} stories={stories} prompts={prompts} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
                     )}
                     {activeTab === 'forum' && (
                       <CommunityScreen currentUser={currentUser} posts={posts} onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
@@ -492,7 +531,9 @@ export default function App() {
                     {activeTab === 'admin' && (
                       <AdminScreen currentUser={currentUser} users={users} docs={docs}
                         onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
-                        onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
+                        onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
+                        prompts={prompts} onAddPrompt={handleAddPrompt} onUpdatePrompt={handleUpdatePrompt} onDeletePrompt={handleDeletePrompt}
+                        onClose={() => setActiveTab('profile')} />
                     )}
                   </div>
                 </div>
@@ -527,7 +568,7 @@ export default function App() {
                     onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
                 )}
                 {activeTab === 'stories' && (
-                  <StoriesScreen currentUser={currentUser} stories={stories}
+                  <StoriesScreen currentUser={currentUser} stories={stories} prompts={prompts}
                     onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
                 )}
                 {activeTab === 'forum' && (
@@ -547,7 +588,9 @@ export default function App() {
                 {activeTab === 'admin' && (
                   <AdminScreen currentUser={currentUser} users={users} docs={docs}
                     onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
-                    onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
+                    onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
+                    prompts={prompts} onAddPrompt={handleAddPrompt} onUpdatePrompt={handleUpdatePrompt} onDeletePrompt={handleDeletePrompt}
+                    onClose={() => setActiveTab('profile')} />
                 )}
               </>
             )}
@@ -711,6 +754,7 @@ export default function App() {
                   <StoriesScreen
                     currentUser={currentUser}
                     stories={stories}
+                    prompts={prompts}
                     onAddStory={handleAddStory}
                     onUpdateStory={handleUpdateStory}
                     onDeleteStory={handleDeleteStory}
@@ -753,7 +797,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'admin' && (
-                  <AdminScreen 
+                  <AdminScreen
                     currentUser={currentUser}
                     users={users}
                     docs={docs}
@@ -762,6 +806,10 @@ export default function App() {
                     onDeleteUser={handleDeleteUser}
                     onAddDoc={handleAddDoc}
                     onDeleteDoc={handleDeleteDoc}
+                    prompts={prompts}
+                    onAddPrompt={handleAddPrompt}
+                    onUpdatePrompt={handleUpdatePrompt}
+                    onDeletePrompt={handleDeletePrompt}
                     onClose={() => {
                       setActiveTab('profile');
                     }}

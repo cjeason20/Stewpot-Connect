@@ -37,6 +37,13 @@ export interface Story {
   consentType: string; // 'none' | 'internal' | 'external'
 }
 
+export interface Prompt {
+  id: string;
+  text: string;
+  category?: string; // optional program tag, e.g. "Community Kitchen"
+  createdAt?: string;
+}
+
 export type PostCategory = 'Announcement' | 'Kudos' | 'Update' | 'Question';
 
 export interface PostAttachment {

@@ -8,6 +8,7 @@ import { syncToDrive } from '../lib/driveSync';
 interface StoriesScreenProps {
   currentUser: User;
   stories: Story[];
+  prompts: import('../types').Prompt[];
   onAddStory: (story: Story) => void;
   onUpdateStory: (story: Story) => Promise<void>;
   onDeleteStory: (id: string) => void;
@@ -16,6 +17,7 @@ interface StoriesScreenProps {
 export default function StoriesScreen({
   currentUser,
   stories,
+  prompts,
   onAddStory,
   onUpdateStory,
   onDeleteStory,
@@ -40,6 +42,9 @@ export default function StoriesScreen({
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  // Prompts sheet
+  const [showPrompts, setShowPrompts] = useState(false);
 
   // Signature pad
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -463,6 +468,72 @@ export default function StoriesScreen({
               ))
             )}
           </div>
+
+          {/* ── Interview Prompts Sheet ── */}
+          {showPrompts && (
+            <div className="absolute inset-0 bg-black/60 flex items-end justify-center z-50" onClick={() => setShowPrompts(false)}>
+              <div
+                className="bg-white rounded-t-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80dvh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Handle + header */}
+                <div className="flex justify-between items-center px-5 pt-4 pb-3 border-b border-brand-border flex-shrink-0">
+                  <div>
+                    <h3 className="text-sm font-bold text-brand-text">Interview Prompts</h3>
+                    <p className="text-[11px] text-brand-text-light mt-0.5">Read one aloud to guide the conversation</p>
+                  </div>
+                  <button onClick={() => setShowPrompts(false)} className="text-brand-text-light hover:text-brand-text p-1 cursor-pointer focus:outline-none">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Prompt list */}
+                <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3 no-scrollbar">
+                  {prompts.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-brand-text-light italic">
+                      No prompts have been added yet.<br />Admins can add them in the Admin Panel.
+                    </div>
+                  ) : (
+                    (() => {
+                      // Group by category
+                      const grouped = prompts.reduce<Record<string, import('../types').Prompt[]>>((acc, p) => {
+                        const cat = p.category || 'General';
+                        if (!acc[cat]) acc[cat] = [];
+                        acc[cat].push(p);
+                        return acc;
+                      }, {});
+                      return Object.keys(grouped).sort().map((cat) => (
+                        <div key={cat}>
+                          <p className="text-[11px] font-bold text-brand-text-light uppercase tracking-wider mb-2">{cat}</p>
+                          <div className="space-y-2">
+                            {grouped[cat].map((p, i) => (
+                              <div key={p.id} className="bg-brand-cream border border-brand-border rounded-xl p-3.5">
+                                <div className="flex gap-2.5 items-start">
+                                  <span className="w-5 h-5 rounded-full bg-brand-green-light text-brand-green text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    {i + 1}
+                                  </span>
+                                  <p className="text-xs text-brand-text leading-relaxed italic">"{p.text}"</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+
+                <div className="px-5 pb-5 pt-3 border-t border-brand-border flex-shrink-0">
+                  <button
+                    onClick={() => setShowPrompts(false)}
+                    className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
+                  >
+                    Back to Recording
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Edit Story Modal ── */}
           {editingStory && (
@@ -1037,13 +1108,20 @@ export default function StoriesScreen({
                     />
                   </label>
 
-                  {/* Program Prompt Box */}
-                  <div className="w-full mt-4 bg-brand-cream border-l-4 border-brand-green rounded-r-xl p-3 text-left">
-                    <div className="text-xs font-bold text-brand-green-dark uppercase tracking-wider mb-1">🎙️ Recording Prompt:</div>
-                    <p className="text-xs text-brand-text-mid italic leading-relaxed">
-                      "Help me understand how you found out about Stewpot's program, and what difference it has made to you this week?"
-                    </p>
-                  </div>
+                  {/* View Prompts button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrompts(true)}
+                    className="w-full mt-4 flex items-center justify-between gap-2 bg-brand-cream border border-brand-border hover:border-brand-green hover:bg-brand-green-light/40 rounded-xl px-4 py-3 text-left transition-all cursor-pointer"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-brand-green-dark">🎙️ Interview Prompts</div>
+                      <div className="text-[11px] text-brand-text-light mt-0.5">
+                        {prompts.length > 0 ? `${prompts.length} prompt${prompts.length === 1 ? '' : 's'} available — tap to view` : 'No prompts added yet'}
+                      </div>
+                    </div>
+                    <span className="text-xl text-brand-green-dark font-medium flex-shrink-0">&rsaquo;</span>
+                  </button>
                 </div>
 
                 <div className="flex gap-2.5 pt-2">

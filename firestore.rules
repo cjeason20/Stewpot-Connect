@@ -82,5 +82,11 @@ service cloud.firestore {
       allow update: if isValidStory(incoming());
       allow delete: if true;
     }
+
+    // 5. Interview Prompts Collection (admin-managed)
+    match /prompts/{promptId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
   }
 }
