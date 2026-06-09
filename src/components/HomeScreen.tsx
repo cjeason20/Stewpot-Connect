@@ -50,48 +50,57 @@ export default function HomeScreen({
     }
   };
 
-  // Extract birthdays occurring in current month or next 30 days
-  const getUpcomingBirthdays = () => {
+  // Collect birthdays AND work anniversaries within the next 30 days
+  const getUpcomingMilestones = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const colors = [
-      'bg-[#4BAD47]',
-      'bg-[#2196F3]',
-      'bg-[#FF7043]',
-      'bg-[#9C27B0]',
-      'bg-[#FF9800]',
-      'bg-[#00BCD4]'
+      'bg-[#4BAD47]', 'bg-[#2196F3]', 'bg-[#FF7043]',
+      'bg-[#9C27B0]', 'bg-[#FF9800]', 'bg-[#00BCD4]',
     ];
 
-    return users
-      .filter((u) => u.bday)
-      .map((u) => {
-        // Support both "MM-DD" (new) and "YYYY-MM-DD" (legacy) formats
+    type Milestone = typeof users[0] & {
+      kind: 'birthday' | 'anniversary';
+      milestoneDate: Date;
+      diffDays: number;
+      years?: number;
+      colorClass: string;
+    };
+
+    const items: Omit<Milestone, 'colorClass'>[] = [];
+
+    users.forEach((u) => {
+      // Birthdays
+      if (u.bday) {
         const bdStr = u.bday.length === 5 ? `2000-${u.bday}` : u.bday;
         const bd = new Date(bdStr + 'T00:00:00');
-        const thisYearBirthday = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
-        
-        if (thisYearBirthday < today) {
-          thisYearBirthday.setFullYear(today.getFullYear() + 1);
+        const thisYear = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
+        if (thisYear < today) thisYear.setFullYear(today.getFullYear() + 1);
+        const diff = Math.ceil((thisYear.getTime() - today.getTime()) / 86400000);
+        if (diff >= 0 && diff <= 30) {
+          items.push({ ...u, kind: 'birthday', milestoneDate: thisYear, diffDays: diff });
         }
-        
-        const diffTime = Math.abs(thisYearBirthday.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return {
-          ...u,
-          bdayDate: thisYearBirthday,
-          diffDays,
-        };
-      })
-      .filter((u) => u.diffDays >= 0 && u.diffDays <= 30)
+      }
+      // Work anniversaries
+      if (u.anniv) {
+        const av = new Date(u.anniv + 'T00:00:00');
+        const thisYear = new Date(today.getFullYear(), av.getMonth(), av.getDate());
+        if (thisYear < today) thisYear.setFullYear(today.getFullYear() + 1);
+        const diff = Math.ceil((thisYear.getTime() - today.getTime()) / 86400000);
+        const celebrationYear = thisYear.getFullYear();
+        const years = celebrationYear - av.getFullYear();
+        if (diff >= 0 && diff <= 30 && years > 0) {
+          items.push({ ...u, kind: 'anniversary', milestoneDate: thisYear, diffDays: diff, years });
+        }
+      }
+    });
+
+    return items
       .sort((a, b) => a.diffDays - b.diffDays)
-      .map((u, index) => ({
-        ...u,
-        colorClass: colors[index % colors.length]
-      }));
+      .map((item, index) => ({ ...item, colorClass: colors[index % colors.length] }));
   };
 
-  const upcomingBirthdays = getUpcomingBirthdays();
+  const upcomingMilestones = getUpcomingMilestones();
   const recentDocs = docs.slice(0, 3);
 
   const todayNow = new Date();
@@ -379,24 +388,22 @@ export default function HomeScreen({
         </div>
 
         <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 pb-1">
-          {upcomingBirthdays.length === 0 ? (
+          {upcomingMilestones.length === 0 ? (
             <div className="text-xs text-brand-text-light italic w-full text-center py-4 bg-white rounded-xl border border-brand-border">
-              No upcoming birthdays this month.
+              No upcoming birthdays or anniversaries this month.
             </div>
           ) : (
-            upcomingBirthdays.map((u, i) => {
+            upcomingMilestones.map((u) => {
               const uInitials = u.initials || u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-              const formattedBday = () => {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const bdStr2 = u.bday.length === 5 ? `2000-${u.bday}` : u.bday;
-                const d = new Date(bdStr2 + 'T00:00:00');
-                return `${months[d.getMonth()]} ${d.getDate()}`;
-              };
+              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const dateLabel = `${months[u.milestoneDate.getMonth()]} ${u.milestoneDate.getDate()}`;
+              const typeLabel = u.kind === 'birthday' ? '🎂 Birthday' : '💼 Work Anniversary';
+              const subLabel = u.kind === 'anniversary' && u.years ? `${u.years} Year${u.years !== 1 ? 's' : ''}` : null;
 
               return (
-                <div 
-                  key={u.id}
-                  className="flex-shrink-0 w-32 bg-white rounded-xl border border-brand-border p-3.5 text-center shadow-sm"
+                <div
+                  key={`${u.id}-${u.kind}`}
+                  className="flex-shrink-0 w-36 bg-white rounded-xl border border-brand-border p-3.5 text-center shadow-sm"
                 >
                   <div className={`w-11 h-11 ${u.colorClass} rounded-full flex items-center justify-center text-white font-bold text-sm mx-auto mb-2 shadow`}>
                     {uInitials}
@@ -404,11 +411,12 @@ export default function HomeScreen({
                   <div className="text-xs font-bold text-brand-text truncate">
                     {u.name.split(' ')[0]} {u.name.split(' ').pop()?.[0]}.
                   </div>
-                  <div className="text-xs text-brand-text-light truncate mt-0.5">
-                    {u.dept || 'Staff'}
-                  </div>
+                  <div className="text-[10px] font-semibold text-brand-text-mid mt-0.5">{typeLabel}</div>
+                  {subLabel && (
+                    <div className="text-[10px] text-brand-text-light">{subLabel}</div>
+                  )}
                   <div className="text-xs font-semibold text-brand-green-dark bg-brand-green-light px-2 py-0.5 rounded-full inline-block mt-2">
-                    {u.diffDays === 0 ? '🎉 Today!' : formattedBday()}
+                    {u.diffDays === 0 ? '🎉 Today!' : dateLabel}
                   </div>
                 </div>
               );
