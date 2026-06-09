@@ -223,7 +223,8 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'posts', id));
     } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `posts/${id}`);
+      console.error('Delete post error:', e);
+      alert('Failed to delete post. Please check your connection and try again.');
     }
   };
 
@@ -290,7 +291,8 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'stories', id));
     } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `stories/${id}`);
+      console.error('Delete story error:', e);
+      alert('Failed to delete story. Please check your connection and try again.');
     }
   };
 
