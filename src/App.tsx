@@ -7,8 +7,9 @@ import CommunityScreen from './components/CommunityScreen';
 import ResourcesScreen from './components/ResourcesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminScreen from './components/AdminScreen';
+import DirectoryScreen from './components/DirectoryScreen';
 
-import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell } from 'lucide-react';
+import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
@@ -364,8 +365,9 @@ export default function App() {
                 { id: 'home',      label: 'Home',        Icon: Home,         desc: 'Dashboard & updates' },
                 { id: 'stories',   label: 'Stories',     Icon: Mic,          desc: 'Record & browse stories' },
                 { id: 'forum',     label: 'Community',   Icon: MessageSquare,desc: 'Team posts & announcements' },
-                { id: 'resources', label: 'Resources',   Icon: BookOpen,     desc: 'Documents & files' },
-                { id: 'profile',   label: 'My Profile',  Icon: UserIcon,     desc: 'Settings & account' },
+                { id: 'resources',  label: 'Resources',  Icon: BookOpen,     desc: 'Documents & files' },
+                { id: 'directory', label: 'Directory',  Icon: Users,        desc: 'Staff contact info' },
+                { id: 'profile',   label: 'My Profile', Icon: UserIcon,     desc: 'Settings & account' },
                 ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield, desc: 'Users, docs & controls' }] : [])
               ] as { id: string; label: string; Icon: React.ElementType; desc: string }[]).map(({ id, label, Icon }) => (
                 <button
@@ -437,7 +439,8 @@ export default function App() {
                       {activeTab === 'home'      && 'Dashboard'}
                       {activeTab === 'stories'   && 'Stories'}
                       {activeTab === 'forum'     && 'Community'}
-                      {activeTab === 'resources' && 'Resources'}
+                      {activeTab === 'resources'  && 'Resources'}
+                      {activeTab === 'directory' && 'Staff Directory'}
                       {activeTab === 'profile'   && 'My Profile'}
                       {activeTab === 'admin'     && 'Admin Panel'}
                     </h2>
@@ -478,6 +481,9 @@ export default function App() {
                     )}
                     {activeTab === 'resources' && (
                       <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
+                    )}
+                    {activeTab === 'directory' && (
+                      <DirectoryScreen currentUser={currentUser} users={users} />
                     )}
                     {activeTab === 'profile' && (
                       <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
@@ -531,6 +537,9 @@ export default function App() {
                 {activeTab === 'resources' && (
                   <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
                 )}
+                {activeTab === 'directory' && (
+                  <DirectoryScreen currentUser={currentUser} users={users} />
+                )}
                 {activeTab === 'profile' && (
                   <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
                     onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
@@ -554,7 +563,7 @@ export default function App() {
                 { id: 'home',      label: 'Home',      Icon: Home },
                 { id: 'stories',   label: 'Stories',   Icon: Mic },
                 { id: 'forum',     label: 'Community', Icon: MessageSquare },
-                { id: 'resources', label: 'Resources', Icon: BookOpen },
+                { id: 'directory', label: 'Directory', Icon: Users },
                 { id: 'profile',   label: 'Profile',   Icon: UserIcon },
               ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
                 <button key={id} onClick={() => setActiveTab(id)}
@@ -718,11 +727,15 @@ export default function App() {
                 )}
 
                 {activeTab === 'resources' && (
-                  <ResourcesScreen 
+                  <ResourcesScreen
                     currentUser={currentUser}
                     docs={docs}
                     onDeleteDoc={handleDeleteDoc}
                   />
+                )}
+
+                {activeTab === 'directory' && (
+                  <DirectoryScreen currentUser={currentUser} users={users} />
                 )}
 
                 {activeTab === 'profile' && (
@@ -789,13 +802,13 @@ export default function App() {
                 {activeTab === 'forum' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
               </button>
 
-              <button 
-                onClick={() => setActiveTab('resources')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'resources' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+              <button
+                onClick={() => setActiveTab('directory')}
+                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'directory' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
-                <BookOpen className={`w-5.5 h-5.5 ${activeTab === 'resources' ? 'text-brand-green' : 'text-brand-text-light'}`} />
-                Resources
-                {activeTab === 'resources' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
+                <Users className={`w-5.5 h-5.5 ${activeTab === 'directory' ? 'text-brand-green' : 'text-brand-text-light'}`} />
+                Directory
+                {activeTab === 'directory' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
               </button>
 
               <button 

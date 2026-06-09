@@ -36,6 +36,7 @@ export default function AdminScreen({
   const [newUserTitle, setNewUserTitle] = useState('');
   const [newUserDept, setNewUserDept] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('member');
+  const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserBdayMon, setNewUserBdayMon] = useState('');
   const [newUserBdayDay, setNewUserBdayDay] = useState('');
   const [newUserAnniv, setNewUserAnniv] = useState('');
@@ -109,7 +110,8 @@ export default function AdminScreen({
       ...(newUserTitle ? { title: newUserTitle } : {}),
       ...(newUserDept ? { dept: newUserDept } : {}),
       ...(bdayValue ? { bday: bdayValue } : {}),
-      ...(newUserAnniv ? { anniv: newUserAnniv } : {})
+      ...(newUserAnniv ? { anniv: newUserAnniv } : {}),
+      ...(newUserPhone.trim() ? { phone: newUserPhone.trim() } : {}),
     };
 
     try {
@@ -120,6 +122,7 @@ export default function AdminScreen({
       setNewUserPassword('');
       setNewUserTitle('');
       setNewUserDept('');
+      setNewUserPhone('');
       setNewUserBdayMon('');
       setNewUserBdayDay('');
       setNewUserAnniv('');
@@ -413,6 +416,17 @@ export default function AdminScreen({
               </div>
             </div>
 
+            <div>
+              <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">📞 Phone Number (Optional)</label>
+              <input
+                type="tel"
+                placeholder="e.g. (555) 867-5309"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(e.target.value)}
+                className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs"
+              />
+            </div>
+
             <button
               type="submit"
               className="w-full py-2.5 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark"
@@ -558,6 +572,17 @@ export default function AdminScreen({
                         className="w-full px-2.5 py-1.5 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-brand-text-light mb-1">📞 Phone Number (Optional)</label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. (555) 867-5309"
+                      value={editingUser.phone || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                      className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs"
+                    />
                   </div>
 
                   <button

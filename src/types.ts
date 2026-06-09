@@ -11,6 +11,7 @@ export interface User {
   initials?: string;
   bday?: string;
   anniv?: string;
+  phone?: string;
   photo?: string;
   photoPosX?: string;
   photoPosY?: string;
