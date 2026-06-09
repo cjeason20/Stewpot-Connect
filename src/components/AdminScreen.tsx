@@ -101,17 +101,19 @@ export default function AdminScreen({
 
   const jobTitles = [
     'Director', 'Assistant Director', 'Executive Director', 'Chief Operating Officer',
+    'Director of Special Events & Communications', 'Director of Shelter Services', 'Director of Case Management',
     'Manager', 'Grants & Admin Manager', 'Shelter Supervisor', 'Shelter Relief Staff',
     'Case Manager', 'Housing Stability Case Manager', 'Housing Navigator',
     'Outreach Specialist', 'Program Staff', 'Receptionist', 'Contract Employee',
-    'Custodian', 'Volunteer Assistant'
+    'Assistant', 'Custodian', 'Volunteer Assistant'
   ];
 
   const departments = [
     'Community Kitchen', 'Clothing Closet', 'Food Pantry', 'Housing Assistance',
     'Opportunity Center', "Matt's House", 'Billy Brumfield Shelter',
     'Special Events & Communications', 'Teen Services', "Children's Services",
-    'Meals on Wheels', 'Volunteer Programs', 'Admin'
+    'Meals on Wheels', 'Volunteer Programs', 'Street Outreach', 'Transitional Shelter',
+    'Vehicles & Maintenance', 'Admin'
   ];
 
   const handleAddUserSubmit = async (e: React.FormEvent) => {
