@@ -44,7 +44,7 @@ export default function LoginScreen({ users, onLogin, onGoogleLogin }: LoginScre
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 min-h-full bg-brand-green px-6 py-12 text-center text-white relative">
+    <div className="flex flex-col items-center justify-center min-h-full bg-brand-green px-6 py-12 text-center text-white relative">
       
       {/* App Branding Logo */}
       <div className="flex flex-col items-center mb-8">

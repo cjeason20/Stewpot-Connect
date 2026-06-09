@@ -496,8 +496,8 @@ export default function App() {
       {isStandalone && (
         <div className="lg:hidden flex flex-col bg-brand-green" style={{ height: '100dvh' }}>
 
-          {/* Screens */}
-          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+          {/* Screens — pushed below the transparent status bar */}
+          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
             {activeTab === 'login' && (
               <LoginScreen users={users}
                 onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
