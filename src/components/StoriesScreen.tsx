@@ -894,12 +894,12 @@ export default function StoriesScreen({
                 <div className="bg-brand-cream border border-brand-border rounded-xl p-4 text-xs text-brand-text-mid leading-relaxed space-y-2">
                   <p className="font-bold text-brand-text text-[13px]">Media Consent &amp; Release Agreement</p>
                   <p>
-                    By signing below, I voluntarily give <span className="font-semibold text-brand-text">The Stewpot</span> permission
+                    By signing below, I voluntarily give <span className="font-semibold text-brand-text">Stewpot Community Services, Inc.</span> permission
                     to record, photograph, and use my voice, image, and personal story for the purposes of communications,
                     marketing, fundraising, grant reporting, and storytelling.
                   </p>
                   <p>
-                    I understand that my story and/or likeness may be shared on The Stewpot's website, social media
+                    I understand that my story and/or likeness may be shared on Stewpot Community Services's website, social media
                     channels, print publications, newsletters, and other public or internal materials, consistent
                     with the consent type selected in the previous step.
                   </p>
