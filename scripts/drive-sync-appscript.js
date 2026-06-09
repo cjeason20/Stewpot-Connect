@@ -12,6 +12,7 @@ const FOLDER_IDS = {
   'story-photos':       '1Y97nLnL5Wv1ZnMNwmMRB87uJc8T-a38j',
   'community-photos':   '1RliVUSsfZkozlBPw-QkWOzoXeDVxXlZ1',
   'profile-photos':     '15pai2Plr8Vvi_M7H-mHRh9YysDTTPmay',
+  'waivers':            '1cp4qaqADLdQGNqMlhmkVQQr0YCdYUOGJ',
 };
 
 function doPost(e) {

@@ -19,7 +19,8 @@ export type DriveFolder =
   | 'audio'
   | 'story-photos'
   | 'community-photos'
-  | 'profile-photos';
+  | 'profile-photos'
+  | 'waivers';
 
 const SYNC_URL = (import.meta as any).env?.VITE_DRIVE_SYNC_URL as string | undefined;
 

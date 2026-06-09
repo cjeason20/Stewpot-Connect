@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { User, Story } from '../types';
-import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2, ImagePlus, X, Music2 } from 'lucide-react';
+import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2, ImagePlus, X, Music2, PenLine, RotateCcw, ShieldCheck } from 'lucide-react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 import { syncToDrive } from '../lib/driveSync';
@@ -40,6 +40,11 @@ export default function StoriesScreen({
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  // Signature pad
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const [hasSigned, setHasSigned] = useState(false);
 
   // Edit-modal upload states
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -143,6 +148,8 @@ export default function StoriesScreen({
     setNotes('');
     setStoryPhotoFile(null);
     setStoryPhotoPreview(null);
+    setHasSigned(false);
+    clearSignature();
     setIsRecording(false);
     setRecDuration(0);
     setAudioUrl(null);
@@ -150,6 +157,80 @@ export default function StoriesScreen({
       clearInterval(timerIntervalRef.current);
     }
   };
+
+  // ── Signature pad helpers ──────────────────────────────────────────────────
+  const getCtx = () => canvasRef.current?.getContext('2d') ?? null;
+
+  const clearSignature = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSigned(false);
+  }, []);
+
+  const canvasPoint = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const ctx = getCtx();
+    if (!ctx) return;
+    isDrawingRef.current = true;
+    const { x, y } = canvasPoint(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawingRef.current) return;
+    const ctx = getCtx();
+    if (!ctx) return;
+    const { x, y } = canvasPoint(e);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1A2E1A';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    if (!hasSigned) setHasSigned(true);
+  };
+
+  const endDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    isDrawingRef.current = false;
+    const ctx = getCtx();
+    if (ctx) ctx.beginPath();
+  };
+
+  const getSignatureBlob = (): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return reject(new Error('No canvas'));
+      // Composite onto white background before saving
+      const out = document.createElement('canvas');
+      out.width = canvas.width;
+      out.height = canvas.height;
+      const ctx = out.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(canvas, 0, 0);
+      out.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+    });
+  // ─────────────────────────────────────────────────────────────────────────
 
   const compressImage = (file: File): Promise<Blob> =>
     new Promise((resolve, reject) => {
@@ -188,7 +269,18 @@ export default function StoriesScreen({
     setIsUploadingStoryPhoto(true);
     try {
       let photoUrl: string | undefined;
+      let waiverUrl: string | undefined;
       const storyId = String(Date.now());
+
+      // Upload signed waiver if present
+      if (hasSigned) {
+        const waiverBlob = await getSignatureBlob();
+        const waiverFileName = `${storyId}.png`;
+        const waiverRef = storageRef(storage, `waivers/${waiverFileName}`);
+        await uploadBytes(waiverRef, waiverBlob, { contentType: 'image/png' });
+        waiverUrl = await getDownloadURL(waiverRef);
+        syncToDrive(waiverUrl, waiverFileName, 'waivers');
+      }
 
       // Upload story photo if provided
       if (storyPhotoFile) {
@@ -224,6 +316,7 @@ export default function StoriesScreen({
         authorId: currentUser.id,
         ...(interviewee.trim() ? { interviewee: interviewee.trim() } : {}),
         ...(photoUrl ? { photoUrl } : {}),
+        ...(waiverUrl ? { waiverUrl } : {}),
         ...(finalAudioUrl ? { audioUrl: finalAudioUrl } : {}),
       };
 
@@ -260,32 +353,18 @@ export default function StoriesScreen({
               </div>
               <div className="text-left flex-1">
                 <h3 className="text-sm font-bold text-brand-text">Record New Story</h3>
-                <p className="text-[13px] text-brand-text-light mt-0.5">5-step simple staff process</p>
+                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 5-step staff process</p>
               </div>
               <span className="text-xl text-brand-green-dark font-medium">&rsaquo;</span>
             </div>
 
             <div className="grid grid-cols-5 gap-1 mt-4 pt-3 border-t border-brand-border text-[13px] text-brand-text-light text-center font-semibold">
-              <div>
-                <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">1</div>
-                Details
-              </div>
-              <div>
-                <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">2</div>
-                Consent
-              </div>
-              <div>
-                <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">3</div>
-                Voice
-              </div>
-              <div>
-                <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">4</div>
-                Notes
-              </div>
-              <div>
-                <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">5</div>
-                Upload
-              </div>
+              {[['1','Details'],['2','Consent'],['3','Waiver'],['4','Voice'],['5','Notes']].map(([n, label]) => (
+                <div key={n}>
+                  <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">{n}</div>
+                  {label}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -326,7 +405,22 @@ export default function StoriesScreen({
                   </div>
                   
                   <div className="bg-brand-cream border-t border-brand-border px-4 py-2.5 flex items-center justify-between text-[13px] text-brand-text-light font-medium">
-                    <div>Recorded by: <span className="font-semibold text-brand-text">{s.author}</span></div>
+                    <div className="flex flex-col gap-0.5">
+                      <span>By: <span className="font-semibold text-brand-text">{s.author}</span></span>
+                      {s.waiverUrl ? (
+                        <a
+                          href={s.waiverUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ShieldCheck className="w-3 h-3" /> Waiver signed
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-brand-text-light italic">No waiver on file</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3">
                       {s.consentType === 'external' ? (
                         <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Public Consent</span>
@@ -657,13 +751,13 @@ export default function StoriesScreen({
             </button>
             <div>
               <h2 className="text-base font-bold text-brand-text">New Voice Story</h2>
-              <p className="text-xs text-brand-text-light">Step {step} of 4</p>
+              <p className="text-xs text-brand-text-light">Step {step} of 5</p>
             </div>
           </div>
 
           {/* Stepper Progress Bar */}
           <div className="px-5 py-3 bg-brand-cream flex gap-1.5 flex-shrink-0">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div 
                 key={s} 
                 className={`h-1.5 flex-1 rounded-full ${s <= step ? 'bg-brand-green' : 'bg-brand-green-mid/40'}`} 
@@ -780,14 +874,108 @@ export default function StoriesScreen({
                     }}
                     className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
                   >
-                    Continue to Record
+                    Continue to Waiver
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 3: AUDIO CAPTURE */}
+            {/* STEP 3: CONSENT WAIVER + SIGNATURE PAD */}
             {step === 3 && (
+              <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
+
+                {/* Header */}
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-brand-green flex-shrink-0" />
+                  <h3 className="text-xs font-bold text-brand-text">Consent Waiver &amp; Signature</h3>
+                </div>
+
+                {/* Waiver text */}
+                <div className="bg-brand-cream border border-brand-border rounded-xl p-4 text-xs text-brand-text-mid leading-relaxed space-y-2">
+                  <p className="font-bold text-brand-text text-[13px]">Media Consent &amp; Release Agreement</p>
+                  <p>
+                    By signing below, I voluntarily give <span className="font-semibold text-brand-text">The Stewpot</span> permission
+                    to record, photograph, and use my voice, image, and personal story for the purposes of communications,
+                    marketing, fundraising, grant reporting, and storytelling.
+                  </p>
+                  <p>
+                    I understand that my story and/or likeness may be shared on The Stewpot's website, social media
+                    channels, print publications, newsletters, and other public or internal materials, consistent
+                    with the consent type selected in the previous step.
+                  </p>
+                  <p>
+                    I confirm that I am 18 years of age or older, or that a parent/guardian has signed on my behalf,
+                    and that I have provided this consent freely and without coercion.
+                  </p>
+                </div>
+
+                {/* Signature pad label */}
+                <div>
+                  <p className="text-xs font-bold text-brand-text mb-1">
+                    Interviewee Signature <span className="font-normal text-brand-text-light">(sign with finger or stylus)</span>
+                  </p>
+
+                  {/* Canvas */}
+                  <div className="relative border-2 border-brand-border rounded-xl overflow-hidden bg-white touch-none select-none">
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={200}
+                      className="w-full block cursor-crosshair"
+                      style={{ touchAction: 'none' }}
+                      onMouseDown={startDraw}
+                      onMouseMove={draw}
+                      onMouseUp={endDraw}
+                      onMouseLeave={endDraw}
+                      onTouchStart={startDraw}
+                      onTouchMove={draw}
+                      onTouchEnd={endDraw}
+                    />
+                    {/* Sign-here guideline */}
+                    {!hasSigned && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-1">
+                        <PenLine className="w-5 h-5 text-brand-border" />
+                        <span className="text-xs text-brand-border font-medium">Sign here</span>
+                      </div>
+                    )}
+                    {/* Baseline */}
+                    <div className="absolute bottom-8 left-6 right-6 h-px bg-brand-border pointer-events-none" />
+                  </div>
+
+                  {/* Clear */}
+                  <button
+                    type="button"
+                    onClick={clearSignature}
+                    className="mt-2 flex items-center gap-1 text-xs text-brand-text-light hover:text-brand-text font-semibold cursor-pointer focus:outline-none"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Clear signature
+                  </button>
+                </div>
+
+                {/* Skip note */}
+                <p className="text-[11px] text-brand-text-light italic">
+                  A signature is recommended but not required — you may continue without one if consent was obtained separately.
+                </p>
+
+                <div className="flex gap-2.5 pt-1">
+                  <button
+                    onClick={() => setStep(2)}
+                    className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => setStep(4)}
+                    className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
+                  >
+                    {hasSigned ? 'Continue to Record' : 'Skip & Continue'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: AUDIO CAPTURE */}
+            {step === 4 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-brand-text">4. Record Voice or Notes</h3>
                 
@@ -862,14 +1050,14 @@ export default function StoriesScreen({
                   <button
                     onClick={() => {
                       if (isRecording) handleStopRecording();
-                      setStep(2);
+                      setStep(3);
                     }}
                     className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
                   >
                     Back
                   </button>
                   <button
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(5)}
                     className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
                   >
                     Continue to Notes
@@ -878,8 +1066,8 @@ export default function StoriesScreen({
               </div>
             )}
 
-            {/* STEP 4: NOTES & COMMIT */}
-            {step === 4 && (
+            {/* STEP 5: NOTES & COMMIT */}
+            {step === 5 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-brand-text">5. Optional Staff Notes &amp; Summary</h3>
                 <p className="text-[13px] text-brand-text-mid leading-relaxed">
@@ -930,7 +1118,7 @@ export default function StoriesScreen({
 
                 <div className="flex gap-2.5 pt-2">
                   <button
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(4)}
                     className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
                   >
                     Back
