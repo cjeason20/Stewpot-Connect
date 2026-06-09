@@ -16,17 +16,6 @@ service cloud.firestore {
       return request.resource.data;
     }
     
-    function existing() {
-      return resource.data;
-    }
-    
-    function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-      );
-    }
-    
     // --- Entity Specific Validation Blueprints ---
     function isValidUser(data) {
       return data.keys().hasAll(['name', 'email', 'role'])
@@ -62,29 +51,20 @@ service cloud.firestore {
     // --- Collection Matching Blocks ---
     
     // 1. Users Collection
+    // This app uses anonymous Firebase Auth — auth.uid never matches the
+    // Firestore user document id, so we gate on isSignedIn() + validation only.
     match /users/{userId} {
       allow read: if true;
-      allow create: if isValidUser(incoming()) && (
-        !isSignedIn() || 
-        isAdmin() || 
-        request.auth.uid == userId
-      );
-      allow update: if isValidUser(incoming()) && (
-        !isSignedIn() || 
-        isAdmin() || (
-          request.auth.uid == userId &&
-          incoming().role == existing().role &&
-          incoming().email == existing().email
-        )
-      );
-      allow delete: if !isSignedIn() || isAdmin();
+      allow create: if isSignedIn() && isValidUser(incoming());
+      allow update: if isSignedIn() && isValidUser(incoming());
+      allow delete: if isSignedIn();
     }
-    
+
     // 2. Docs (Resources) Collection
     match /docs/{docId} {
       allow read: if true;
-      allow create, update: if (!isSignedIn() || isAdmin()) && isValidDocumentItem(incoming());
-      allow delete: if !isSignedIn() || isAdmin();
+      allow create, update: if isSignedIn() && isValidDocumentItem(incoming());
+      allow delete: if isSignedIn();
     }
     
     // 3. Posts Collection
