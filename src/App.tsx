@@ -309,6 +309,11 @@ export default function App() {
     setActiveTab('admin');
   };
 
+  // Detect PWA standalone mode (installed on home screen)
+  const isStandalone =
+    (window.navigator as any).standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+
   return (
     <div className="font-sans antialiased overflow-x-hidden">
 
@@ -485,8 +490,80 @@ export default function App() {
       </div>
 
       {/* ============================================================
-          MOBILE LAYOUT — visible below lg breakpoint (unchanged)
+          PWA STANDALONE LAYOUT — installed on iPhone/Android home screen
+          No phone mockup, no fake status bar — clean native-style UI
       ============================================================ */}
+      {isStandalone && (
+        <div className="lg:hidden flex flex-col bg-brand-cream" style={{ height: '100dvh' }}>
+
+          {/* Screens */}
+          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+            {activeTab === 'login' && (
+              <LoginScreen users={users}
+                onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
+                onGoogleLogin={handleGoogleLogin}
+              />
+            )}
+            {currentUser && (
+              <>
+                {activeTab === 'home' && (
+                  <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs}
+                    onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
+                )}
+                {activeTab === 'stories' && (
+                  <StoriesScreen currentUser={currentUser} stories={stories}
+                    onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
+                )}
+                {activeTab === 'forum' && (
+                  <CommunityScreen currentUser={currentUser} posts={posts}
+                    onAddPost={handleAddPost} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
+                )}
+                {activeTab === 'resources' && (
+                  <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
+                )}
+                {activeTab === 'profile' && (
+                  <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
+                    onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
+                )}
+                {activeTab === 'admin' && (
+                  <AdminScreen currentUser={currentUser} users={users} docs={docs}
+                    onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
+                    onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc} onClose={() => setActiveTab('profile')} />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Bottom tab bar — sits above the iOS home indicator */}
+          {currentUser && activeTab !== 'login' && activeTab !== 'admin' && (
+            <div
+              className="bg-white border-t border-brand-border flex items-center justify-around select-none flex-shrink-0 z-30 pt-2"
+              style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+            >
+              {([
+                { id: 'home',      label: 'Home',      Icon: Home },
+                { id: 'stories',   label: 'Stories',   Icon: Mic },
+                { id: 'forum',     label: 'Community', Icon: MessageSquare },
+                { id: 'resources', label: 'Resources', Icon: BookOpen },
+                { id: 'profile',   label: 'Profile',   Icon: UserIcon },
+              ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  className={`flex flex-col items-center gap-0.5 text-[10px] font-medium px-3 py-1 transition-all ${activeTab === id ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                >
+                  <Icon className={`w-5 h-5 ${activeTab === id ? 'text-brand-green' : 'text-brand-text-light'}`} />
+                  {label}
+                  {activeTab === id && <span className="w-1 h-1 bg-brand-green rounded-full" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================
+          MOBILE BROWSER LAYOUT — phone mockup preview (non-standalone)
+      ============================================================ */}
+      {!isStandalone && (
       <div className="lg:hidden flex flex-col sm:flex-row items-center justify-center min-h-screen bg-[#2D2D2D] p-0 sm:p-5">
 
       {/* Container Wrapper */}
@@ -727,7 +804,9 @@ export default function App() {
 
       </div>
 
-      </div> {/* end lg:hidden mobile wrapper */}
+      </div>
+      )}
+      {/* end !isStandalone mobile browser layout */}
 
     </div>
   );
