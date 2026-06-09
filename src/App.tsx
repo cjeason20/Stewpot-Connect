@@ -314,6 +314,14 @@ export default function App() {
     (window.navigator as any).standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches;
 
+  // In standalone PWA mode, force green on the root elements so the
+  // transparent status bar area never shows a white/grey background.
+  // CSS @media (display-mode: standalone) is unreliable on iOS < 16.4.
+  if (isStandalone) {
+    document.documentElement.style.backgroundColor = '#4BAD4B';
+    document.body.style.backgroundColor = '#4BAD4B';
+  }
+
   return (
     <div className="font-sans antialiased overflow-x-hidden">
 
