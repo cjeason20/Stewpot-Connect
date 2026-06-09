@@ -100,7 +100,7 @@ export default function AdminScreen({
   const [driveFolderUrl, setDriveFolderUrl] = useState('');
 
   const jobTitles = [
-    'Assistant', 'Assistant Director', 'Case Manager', 'Chief Operating Officer',
+    'Accountant', 'Assistant', 'Assistant Director', 'Case Manager', 'Chief Operating Officer',
     'Contract Employee', 'Custodian', 'Director', 'Director of Case Management',
     'Director of Shelter Services', 'Director of Special Events & Communications',
     'Executive Director', 'Grants & Admin Manager', 'Housing Navigator',
