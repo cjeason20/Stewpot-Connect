@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Capacitor native project folders (generated — run `npm run android` or `npm run ios` to recreate)
+android/
+ios/
