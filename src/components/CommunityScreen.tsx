@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { User, Post, PostCategory, PostAttachment } from '../types';
-import { Send, FileText, Image as ImageIcon, Link, X, MessageSquare, Megaphone, Milestone, HelpCircle, Trash2, Edit3, Plus } from 'lucide-react';
+import { Send, FileText, Image as ImageIcon, Link, X, Trash2, Edit3 } from 'lucide-react';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 
 interface CommunityScreenProps {
   currentUser: User;
@@ -25,6 +27,7 @@ export default function CommunityScreen({
   const [text, setText] = useState('');
   const [postLink, setPostLink] = useState('');
   const [attachment, setAttachment] = useState<PostAttachment | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const categories: (PostCategory | 'All')[] = ['All', 'Announcement', 'Kudos', 'Update', 'Question'];
   
@@ -46,22 +49,59 @@ export default function CommunityScreen({
     }
   };
 
-  const handleComposeFileChange = (e: React.ChangeEvent<HTMLInputElement>, kind: 'file' | 'photo') => {
+  const compressImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
+          'image/jpeg', 0.82
+        );
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+
+  const handleComposeFileChange = async (e: React.ChangeEvent<HTMLInputElement>, kind: 'file' | 'photo') => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      if (loadEvent.target?.result) {
-        setAttachment({
-          name: file.name,
-          type: file.type,
-          data: loadEvent.target.result as string,
-          kind,
-        });
+    if (kind === 'photo') {
+      setIsUploadingPhoto(true);
+      try {
+        const blob = await compressImage(file);
+        const photoRef = storageRef(storage, `post-photos/${Date.now()}-${file.name.replace(/\s+/g, '_')}`);
+        await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
+        const url = await getDownloadURL(photoRef);
+        setAttachment({ name: file.name, type: 'image/jpeg', data: url, kind: 'photo' });
+      } catch (err) {
+        console.error('Photo upload error:', err);
+        alert('Failed to upload photo. Please try again.');
+      } finally {
+        setIsUploadingPhoto(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      // Regular files: keep as base64 (documents are typically small)
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+        if (loadEvent.target?.result) {
+          setAttachment({ name: file.name, type: file.type, data: loadEvent.target.result as string, kind: 'file' });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handlePostSubmit = async (e: React.FormEvent) => {
@@ -257,11 +297,12 @@ export default function CommunityScreen({
               Cancel
             </button>
             <h2 className="text-base font-bold text-brand-text font-poppins">New team post</h2>
-            <button 
+            <button
               onClick={handlePostSubmit}
-              className="bg-brand-green text-white font-bold text-xs px-4 py-2 rounded-full shadow hover:bg-brand-green-dark cursor-pointer flex items-center gap-1"
+              disabled={isUploadingPhoto}
+              className="bg-brand-green text-white font-bold text-xs px-4 py-2 rounded-full shadow hover:bg-brand-green-dark cursor-pointer flex items-center gap-1 disabled:opacity-60"
             >
-              <Send className="w-3.5 h-3.5" /> Post
+              <Send className="w-3.5 h-3.5" /> {isUploadingPhoto ? 'Uploading…' : 'Post'}
             </button>
           </div>
 
@@ -319,13 +360,15 @@ export default function CommunityScreen({
                       onChange={(e) => handleComposeFileChange(e, 'file')} 
                     />
                   </label>
-                  <label className="flex-1 py-2.5 border border-brand-border rounded-xl bg-white hover:bg-brand-green-light transition-all flex items-center justify-center gap-1.5 text-xs text-brand-text-mid font-semibold cursor-pointer">
-                    <ImageIcon className="w-4 h-4 text-brand-green" /> Photo
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={(e) => handleComposeFileChange(e, 'photo')} 
+                  <label className={`flex-1 py-2.5 border border-brand-border rounded-xl bg-white hover:bg-brand-green-light transition-all flex items-center justify-center gap-1.5 text-xs text-brand-text-mid font-semibold ${isUploadingPhoto ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
+                    <ImageIcon className="w-4 h-4 text-brand-green" />
+                    {isUploadingPhoto ? 'Uploading…' : 'Photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isUploadingPhoto}
+                      onChange={(e) => handleComposeFileChange(e, 'photo')}
                     />
                   </label>
                 </div>
