@@ -191,13 +191,13 @@ export default function HomeScreen({
                     />
                   )}
                   <div className="p-3.5">
-                    <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full mb-2">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full mb-2">
                       <Megaphone className="w-3 h-3" /> Announcement
                     </div>
                     <h3 className="text-xs font-semibold text-brand-text line-clamp-2 leading-relaxed">
                       {p.text}
                     </h3>
-                    <div className="text-[10px] text-brand-text-light mt-2.5 font-medium">
+                    <div className="text-xs text-brand-text-light mt-2.5 font-medium">
                       {p.author} &middot; {p.date}
                     </div>
                   </div>
@@ -244,15 +244,15 @@ export default function HomeScreen({
                   )}
                   <div className="p-3.5">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
+                      <span className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
                         {emoji} {p.cat}
                       </span>
-                      <span className="text-[10px] text-brand-text-light font-medium ml-auto">{p.date}</span>
+                      <span className="text-xs text-brand-text-light font-medium ml-auto">{p.date}</span>
                     </div>
                     {p.text && (
                       <p className="text-xs text-brand-text-mid leading-relaxed line-clamp-2">{p.text}</p>
                     )}
-                    <div className="text-[10px] text-brand-text-light mt-2 font-medium">{p.author}</div>
+                    <div className="text-xs text-brand-text-light mt-2 font-medium">{p.author}</div>
                   </div>
                 </div>
               );
@@ -265,7 +265,7 @@ export default function HomeScreen({
       <div className="mt-6">
         <div className="px-5 flex justify-between items-center mb-3">
           <h2 className="text-sm font-bold text-brand-text flex items-center gap-1.5">&#x1F382; Birthdays &amp; Milestones</h2>
-          <span className="text-[10px] font-semibold text-brand-green bg-brand-green-light px-2 py-0.5 rounded-full">30 Days</span>
+          <span className="text-xs font-semibold text-brand-green bg-brand-green-light px-2 py-0.5 rounded-full">30 Days</span>
         </div>
 
         <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 pb-1">
@@ -294,10 +294,10 @@ export default function HomeScreen({
                   <div className="text-xs font-bold text-brand-text truncate">
                     {u.name.split(' ')[0]} {u.name.split(' ').pop()?.[0]}.
                   </div>
-                  <div className="text-[10px] text-brand-text-light truncate mt-0.5">
+                  <div className="text-xs text-brand-text-light truncate mt-0.5">
                     {u.dept || 'Staff'}
                   </div>
-                  <div className="text-[10px] font-semibold text-brand-green-dark bg-brand-green-light px-2 py-0.5 rounded-full inline-block mt-2">
+                  <div className="text-xs font-semibold text-brand-green-dark bg-brand-green-light px-2 py-0.5 rounded-full inline-block mt-2">
                     {u.diffDays === 0 ? '🎉 Today!' : formattedBday()}
                   </div>
                 </div>
@@ -338,7 +338,7 @@ export default function HomeScreen({
                   </div>
                   <div className="text-left flex-1 min-width-0">
                     <h3 className="text-xs font-semibold text-brand-text truncate">{d.displayName}</h3>
-                    <p className="text-[10px] text-brand-text-light mt-0.5">Shared on {d.date} &middot; {d.size}</p>
+                    <p className="text-xs text-brand-text-light mt-0.5">Shared on {d.date} &middot; {d.size}</p>
                   </div>
                   <Eye className="w-4 h-4 text-brand-green" />
                 </div>

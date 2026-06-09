@@ -1,6 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { User, Story } from '../types';
-import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2 } from 'lucide-react';
+import { Mic, ArrowLeft, Square, UploadCloud, Edit3, Trash2, ImagePlus, X } from 'lucide-react';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
+import { syncToDrive } from '../lib/driveSync';
 
 interface StoriesScreenProps {
   currentUser: User;
@@ -27,6 +30,11 @@ export default function StoriesScreen({
   const [interviewee, setInterviewee] = useState('');
   const [consentType, setConsentType] = useState('none'); // 'none' | 'internal' | 'external'
   const [notes, setNotes] = useState('');
+
+  // Story photo
+  const [storyPhotoFile, setStoryPhotoFile] = useState<File | null>(null);
+  const [storyPhotoPreview, setStoryPhotoPreview] = useState<string | null>(null);
+  const [isUploadingStoryPhoto, setIsUploadingStoryPhoto] = useState(false);
 
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -116,6 +124,8 @@ export default function StoriesScreen({
     setInterviewee('');
     setConsentType('none');
     setNotes('');
+    setStoryPhotoFile(null);
+    setStoryPhotoPreview(null);
     setIsRecording(false);
     setRecDuration(0);
     setAudioUrl(null);
@@ -124,7 +134,31 @@ export default function StoriesScreen({
     }
   };
 
-  const handleUploadStory = () => {
+  const compressImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
+          'image/jpeg', 0.82,
+        );
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+
+  const handleUploadStory = async () => {
     if (!title.trim() || !program) {
       alert('Please fill out a title and program first.');
       return;
@@ -134,22 +168,57 @@ export default function StoriesScreen({
       return;
     }
 
-    const newStory: Story = {
-      id: String(Date.now()),
-      title: title.trim(),
-      program,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      notes: notes.trim(),
-      hasConsent: consentType !== 'none',
-      consentType,
-      author: currentUser.name,
-      authorId: currentUser.id,
-      ...(interviewee.trim() ? { interviewee: interviewee.trim() } : {}),
-    };
+    setIsUploadingStoryPhoto(true);
+    try {
+      let photoUrl: string | undefined;
+      const storyId = String(Date.now());
 
-    onAddStory(newStory);
-    alert('Congratulations! Your story has been successfully encrypted and uploaded securely to Stewpot local vault.');
-    resetForm();
+      // Upload story photo if provided
+      if (storyPhotoFile) {
+        const blob = await compressImage(storyPhotoFile);
+        const fileName = `${storyId}.jpg`;
+        const photoRef = storageRef(storage, `story-photos/${fileName}`);
+        await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
+        photoUrl = await getDownloadURL(photoRef);
+        // Sync to Drive (fire-and-forget)
+        syncToDrive(photoUrl, fileName, 'story-photos');
+      }
+
+      // Upload audio if recorded via blob URL
+      let finalAudioUrl = audioUrl;
+      if (audioUrl && audioUrl.startsWith('blob:')) {
+        const audioBlob = await fetch(audioUrl).then((r) => r.blob());
+        const audioFileName = `${storyId}.webm`;
+        const audioRef = storageRef(storage, `story-audio/${audioFileName}`);
+        await uploadBytes(audioRef, audioBlob, { contentType: 'audio/webm' });
+        finalAudioUrl = await getDownloadURL(audioRef);
+        syncToDrive(finalAudioUrl, audioFileName, 'audio');
+      }
+
+      const newStory: Story = {
+        id: storyId,
+        title: title.trim(),
+        program,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        notes: notes.trim(),
+        hasConsent: consentType !== 'none',
+        consentType,
+        author: currentUser.name,
+        authorId: currentUser.id,
+        ...(interviewee.trim() ? { interviewee: interviewee.trim() } : {}),
+        ...(photoUrl ? { photoUrl } : {}),
+        ...(finalAudioUrl ? { audioUrl: finalAudioUrl } : {}),
+      };
+
+      onAddStory(newStory);
+      alert('Story uploaded successfully!');
+      resetForm();
+    } catch (err) {
+      console.error('Story upload error:', err);
+      alert('Upload failed. Please check your connection and try again.');
+    } finally {
+      setIsUploadingStoryPhoto(false);
+    }
   };
 
   return (
@@ -174,12 +243,12 @@ export default function StoriesScreen({
               </div>
               <div className="text-left flex-1">
                 <h3 className="text-sm font-bold text-brand-text">Record New Story</h3>
-                <p className="text-[11px] text-brand-text-light mt-0.5">5-step simple staff process</p>
+                <p className="text-[13px] text-brand-text-light mt-0.5">5-step simple staff process</p>
               </div>
               <span className="text-xl text-brand-green-dark font-medium">&rsaquo;</span>
             </div>
 
-            <div className="grid grid-cols-5 gap-1 mt-4 pt-3 border-t border-brand-border text-[9px] text-brand-text-light text-center font-semibold">
+            <div className="grid grid-cols-5 gap-1 mt-4 pt-3 border-t border-brand-border text-[13px] text-brand-text-light text-center font-semibold">
               <div>
                 <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">1</div>
                 Details
@@ -216,16 +285,19 @@ export default function StoriesScreen({
             ) : (
               stories.map((s) => (
                 <div key={s.id} className="bg-white rounded-xl border border-brand-border overflow-hidden">
+                  {s.photoUrl && (
+                    <img src={s.photoUrl} alt="Story" className="w-full h-40 object-cover" />
+                  )}
                   <div className="p-4">
                     <div className="flex justify-between items-start">
-                      <span className="inline-block text-[9px] font-bold text-brand-green-dark bg-brand-green-light px-2.5 py-0.5 rounded-full uppercase tracking-widest">
+                      <span className="inline-block text-[13px] font-bold text-brand-green-dark bg-brand-green-light px-2.5 py-0.5 rounded-full uppercase tracking-widest">
                         {s.program}
                       </span>
-                      <span className="text-[10px] text-brand-text-light">{s.date}</span>
+                      <span className="text-xs text-brand-text-light">{s.date}</span>
                     </div>
                     <h3 className="text-sm font-bold text-brand-text mt-2">{s.title}</h3>
                     {s.interviewee && (
-                      <p className="text-[10px] text-brand-text-light mt-1 font-medium">
+                      <p className="text-xs text-brand-text-light mt-1 font-medium">
                         🎤 {s.interviewee}
                       </p>
                     )}
@@ -236,15 +308,15 @@ export default function StoriesScreen({
                     )}
                   </div>
                   
-                  <div className="bg-brand-cream border-t border-brand-border px-4 py-2.5 flex items-center justify-between text-[11px] text-brand-text-light font-medium">
+                  <div className="bg-brand-cream border-t border-brand-border px-4 py-2.5 flex items-center justify-between text-[13px] text-brand-text-light font-medium">
                     <div>Recorded by: <span className="font-semibold text-brand-text">{s.author}</span></div>
                     <div className="flex items-center gap-3">
                       {s.consentType === 'external' ? (
-                        <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[9px]">Public Consent</span>
+                        <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Public Consent</span>
                       ) : s.consentType === 'internal' ? (
-                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[9px]">Internal Training</span>
+                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Internal Training</span>
                       ) : (
-                        <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-bold text-[9px]">Archival Only</span>
+                        <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Archival Only</span>
                       )}
                       
                       {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
@@ -284,7 +356,7 @@ export default function StoriesScreen({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Story Title</label>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Story Title</label>
                   <input
                     type="text"
                     value={editingStory.title}
@@ -294,7 +366,7 @@ export default function StoriesScreen({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Program</label>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Program</label>
                   <select
                     value={editingStory.program}
                     onChange={(e) => setEditingStory({ ...editingStory, program: e.target.value })}
@@ -307,7 +379,7 @@ export default function StoriesScreen({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Consent Type</label>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Consent Type</label>
                   <select
                     value={editingStory.consentType}
                     onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: e.target.value !== 'none' })}
@@ -320,7 +392,7 @@ export default function StoriesScreen({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Notes</label>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1.5">Notes</label>
                   <textarea
                     value={editingStory.notes || ''}
                     onChange={(e) => setEditingStory({ ...editingStory, notes: e.target.value })}
@@ -364,7 +436,7 @@ export default function StoriesScreen({
             </button>
             <div>
               <h2 className="text-base font-bold text-brand-text">New Voice Story</h2>
-              <p className="text-[10px] text-brand-text-light">Step {step} of 4</p>
+              <p className="text-xs text-brand-text-light">Step {step} of 4</p>
             </div>
           </div>
 
@@ -440,7 +512,7 @@ export default function StoriesScreen({
             {step === 2 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-brand-text">3. Client Information Consent</h3>
-                <p className="text-[11px] text-brand-text-mid leading-relaxed mb-4">
+                <p className="text-[13px] text-brand-text-mid leading-relaxed mb-4">
                   Please establish which type of consent the participant signed or verified verbally for this story.
                 </p>
 
@@ -450,7 +522,7 @@ export default function StoriesScreen({
                     className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'external' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
                   >
                     <div className="font-bold text-xs text-brand-text">External / Public Communications</div>
-                    <p className="text-[10px] text-brand-text-mid mt-0.5">Authorizes use on website, social media, newsletters, and fundraisers.</p>
+                    <p className="text-xs text-brand-text-mid mt-0.5">Authorizes use on website, social media, newsletters, and fundraisers.</p>
                   </div>
 
                   <div 
@@ -458,7 +530,7 @@ export default function StoriesScreen({
                     className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'internal' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
                   >
                     <div className="font-bold text-xs text-brand-text">Internal Staff Training &amp; Grant Audits Only</div>
-                    <p className="text-[10px] text-brand-text-mid mt-0.5">Story represents internal study or validation of program performance in reports.</p>
+                    <p className="text-xs text-brand-text-mid mt-0.5">Story represents internal study or validation of program performance in reports.</p>
                   </div>
 
                   <div 
@@ -466,7 +538,7 @@ export default function StoriesScreen({
                     className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'restricted' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
                   >
                     <div className="font-bold text-xs text-brand-text">Restricted Archivist Collection Only</div>
-                    <p className="text-[10px] text-brand-text-mid mt-0.5">Identities are anonymized immediately. To be referenced for historic archives.</p>
+                    <p className="text-xs text-brand-text-mid mt-0.5">Identities are anonymized immediately. To be referenced for historic archives.</p>
                   </div>
                 </div>
 
@@ -518,14 +590,14 @@ export default function StoriesScreen({
                   <p className="mt-4 font-bold text-xs text-[#1A2E1A]" id="micLabel">
                     {isRecording ? 'Recording is live... tap to stop' : 'Tap to begin recording'}
                   </p>
-                  <p className="text-[10px] text-brand-text-light font-mono mt-1" id="micTimer">
+                  <p className="text-xs text-brand-text-light font-mono mt-1" id="micTimer">
                     {isRecording ? formatTime(recDuration) : audioUrl ? 'Voice clip ready' : 'Recording uses browser microphone'}
                   </p>
 
                   {/* Playback controller */}
                   {audioUrl && !isRecording && (
                     <div className="mt-6 w-full space-y-2.5 bg-brand-cream/80 p-3 rounded-xl border border-brand-border">
-                      <div className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider text-center">Audio Playback Preview</div>
+                      <div className="text-xs font-bold text-brand-text-light uppercase tracking-wider text-center">Audio Playback Preview</div>
                       <audio src={audioUrl} controls className="w-full h-8 flex-shrink-0" />
                     </div>
                   )}
@@ -533,7 +605,7 @@ export default function StoriesScreen({
                   {/* OR divider */}
                   <div className="w-full flex items-center gap-3 mt-5">
                     <div className="flex-1 h-px bg-brand-border" />
-                    <span className="text-[10px] text-brand-text-light font-bold uppercase tracking-widest">or upload a file</span>
+                    <span className="text-xs text-brand-text-light font-bold uppercase tracking-widest">or upload a file</span>
                     <div className="flex-1 h-px bg-brand-border" />
                   </div>
 
@@ -541,7 +613,7 @@ export default function StoriesScreen({
                   <label className={`w-full mt-3 cursor-pointer border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light/40 transition-all rounded-xl bg-brand-cream/60 flex flex-col items-center justify-center gap-1.5 py-4 px-3 text-center ${isRecording ? 'opacity-40 pointer-events-none' : ''}`}>
                     <UploadCloud className="w-6 h-6 text-brand-green" />
                     <span className="text-xs font-bold text-brand-text">Upload Audio Recording</span>
-                    <span className="text-[10px] text-brand-text-light">MP3, M4A, WAV, OGG, WebM</span>
+                    <span className="text-xs text-brand-text-light">MP3, M4A, WAV, OGG, WebM</span>
                     <input
                       type="file"
                       accept="audio/*"
@@ -558,7 +630,7 @@ export default function StoriesScreen({
 
                   {/* Program Prompt Box */}
                   <div className="w-full mt-4 bg-brand-cream border-l-4 border-brand-green rounded-r-xl p-3 text-left">
-                    <div className="text-[10px] font-bold text-brand-green-dark uppercase tracking-wider mb-1">🎙️ Recording Prompt:</div>
+                    <div className="text-xs font-bold text-brand-green-dark uppercase tracking-wider mb-1">🎙️ Recording Prompt:</div>
                     <p className="text-xs text-brand-text-mid italic leading-relaxed">
                       "Help me understand how you found out about Stewpot's program, and what difference it has made to you this week?"
                     </p>
@@ -589,7 +661,7 @@ export default function StoriesScreen({
             {step === 4 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-brand-text">5. Optional Staff Notes &amp; Summary</h3>
-                <p className="text-[11px] text-brand-text-mid leading-relaxed">
+                <p className="text-[13px] text-brand-text-mid leading-relaxed">
                   Enter key transcripts, case notes, or brief contextual information regarding this file.
                 </p>
 
@@ -600,6 +672,41 @@ export default function StoriesScreen({
                   className="w-full h-28 px-3.5 py-2.5 bg-brand-cream border border-brand-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-green focus:bg-white resize-none"
                 />
 
+                {/* Optional photo upload */}
+                <div>
+                  <p className="text-xs font-bold text-brand-text mb-2">📷 Story Photo <span className="font-normal text-brand-text-light">(optional)</span></p>
+                  {storyPhotoPreview ? (
+                    <div className="relative">
+                      <img src={storyPhotoPreview} alt="Story preview" className="w-full h-40 object-cover rounded-xl border border-brand-border" />
+                      <button
+                        type="button"
+                        onClick={() => { setStoryPhotoFile(null); setStoryPhotoPreview(null); }}
+                        className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center gap-1.5 py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light/40 rounded-xl bg-brand-cream/60 cursor-pointer transition-all">
+                      <ImagePlus className="w-6 h-6 text-brand-green" />
+                      <span className="text-xs font-semibold text-brand-text">Tap to add a photo</span>
+                      <span className="text-[13px] text-brand-text-light">JPG, PNG, HEIC</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setStoryPhotoFile(file);
+                          setStoryPhotoPreview(URL.createObjectURL(file));
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <div className="flex gap-2.5 pt-2">
                   <button
                     onClick={() => setStep(3)}
@@ -609,9 +716,11 @@ export default function StoriesScreen({
                   </button>
                   <button
                     onClick={handleUploadStory}
-                    className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-brand-green-dark"
+                    disabled={isUploadingStoryPhoto}
+                    className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-brand-green-dark disabled:opacity-60"
                   >
-                    <UploadCloud className="w-4 h-4" /> Upload Story
+                    <UploadCloud className="w-4 h-4" />
+                    {isUploadingStoryPhoto ? 'Uploading…' : 'Upload Story'}
                   </button>
                 </div>
               </div>

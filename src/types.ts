@@ -30,6 +30,7 @@ export interface Story {
   author: string;
   authorId?: string;
   interviewee?: string;
+  photoUrl?: string;
   notes?: string;
   hasConsent: boolean;
   consentType: string; // 'none' | 'internal' | 'external'

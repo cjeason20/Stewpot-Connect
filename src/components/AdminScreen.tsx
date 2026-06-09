@@ -246,7 +246,7 @@ export default function AdminScreen({
           
           {/* User list */}
           <div className="space-y-2.5">
-            <h3 className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider pl-1">Colleague Directory ({users.length})</h3>
+            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">Colleague Directory ({users.length})</h3>
             <div className="space-y-2 max-h-80 overflow-y-auto no-scrollbar bg-white rounded-xl border border-brand-border divide-y divide-brand-border">
               {users.map((u) => (
                 <div key={u.id} className="p-3.5 flex items-center gap-3 justify-between">
@@ -256,12 +256,12 @@ export default function AdminScreen({
                     </div>
                     <div className="text-left min-width-0">
                       <div className="text-xs font-bold text-brand-text truncate">{u.name}</div>
-                      <div className="text-[10px] text-brand-text-light truncate">{u.title || 'Staff'} &middot; {u.dept || ''}</div>
+                      <div className="text-xs text-brand-text-light truncate">{u.title || 'Staff'} &middot; {u.dept || ''}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-brand-green-light text-brand-green-dark">
+                    <span className="text-[13px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-brand-green-light text-brand-green-dark">
                       {u.role}
                     </span>
                     <button
@@ -302,7 +302,7 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Full Name</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Full Name</label>
                 <input
                   type="text"
                   placeholder="John Smith"
@@ -314,7 +314,7 @@ export default function AdminScreen({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Staff Email</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Staff Email</label>
                 <input
                   type="email"
                   placeholder="e.g. name@stewpot.org"
@@ -328,7 +328,7 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Job Title</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Job Title</label>
                 <select
                   value={newUserTitle}
                   onChange={(e) => setNewUserTitle(e.target.value)}
@@ -342,7 +342,7 @@ export default function AdminScreen({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Department</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Department</label>
                 <select
                   value={newUserDept}
                   onChange={(e) => setNewUserDept(e.target.value)}
@@ -358,7 +358,7 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Access Role</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Access Role</label>
                 <select
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value as UserRole)}
@@ -370,7 +370,7 @@ export default function AdminScreen({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">Temporary Password</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">Temporary Password</label>
                 <input
                   type="text"
                   placeholder="Reset value (min 6 chars)"
@@ -384,7 +384,7 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">&#x1F382; Birthday (Month &amp; Day)</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">&#x1F382; Birthday (Month &amp; Day)</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   <select
                     value={newUserBdayMon}
@@ -406,7 +406,7 @@ export default function AdminScreen({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">&#x1F4BC; Work Anniversary</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5">&#x1F4BC; Work Anniversary</label>
                 <input
                   type="date"
                   value={newUserAnniv}
@@ -417,7 +417,7 @@ export default function AdminScreen({
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-brand-text-light mb-1.5">📞 Phone Number (Optional)</label>
+              <label className="block text-xs font-bold text-brand-text-light mb-1.5">📞 Phone Number (Optional)</label>
               <input
                 type="tel"
                 placeholder="e.g. (555) 867-5309"
@@ -462,7 +462,7 @@ export default function AdminScreen({
                 <form onSubmit={handleEditUserSubmit} className="space-y-3.5">
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Full Name</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Full Name</label>
                       <input 
                         type="text" 
                         value={editingUser.name}
@@ -472,7 +472,7 @@ export default function AdminScreen({
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Email</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Email</label>
                       <input 
                         type="email" 
                         value={editingUser.email}
@@ -485,7 +485,7 @@ export default function AdminScreen({
 
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Title</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Title</label>
                       <select 
                         value={editingUser.title}
                         onChange={(e) => setEditingUser({ ...editingUser, title: e.target.value })}
@@ -498,7 +498,7 @@ export default function AdminScreen({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Dept</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Dept</label>
                       <select 
                         value={editingUser.dept}
                         onChange={(e) => setEditingUser({ ...editingUser, dept: e.target.value })}
@@ -514,7 +514,7 @@ export default function AdminScreen({
 
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Role</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Role</label>
                       <select 
                         value={editingUser.role}
                         onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
@@ -525,7 +525,7 @@ export default function AdminScreen({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-1">Compliance Pass</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-1">Compliance Pass</label>
                       <input 
                         type="text" 
                         value={editingUser.password || ''}
@@ -538,7 +538,7 @@ export default function AdminScreen({
 
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Birthday (Month &amp; Day)</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-0.5">Birthday (Month &amp; Day)</label>
                       {(() => {
                         const { mon: eMon, day: eDay } = parseBday(editingUser.bday);
                         return (
@@ -564,7 +564,7 @@ export default function AdminScreen({
                       })()}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-brand-text-light mb-0.5">Work Anniversary</label>
+                      <label className="block text-xs font-bold text-brand-text-light mb-0.5">Work Anniversary</label>
                       <input
                         type="date"
                         value={editingUser.anniv || ''}
@@ -575,7 +575,7 @@ export default function AdminScreen({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-brand-text-light mb-1">📞 Phone Number (Optional)</label>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1">📞 Phone Number (Optional)</label>
                     <input
                       type="tel"
                       placeholder="e.g. (555) 867-5309"
@@ -608,7 +608,7 @@ export default function AdminScreen({
             </h3>
 
             <div>
-              <label className="block text-[10px] font-bold text-brand-text-light mb-1 pl-0.5">Document Display Name (Optional)</label>
+              <label className="block text-xs font-bold text-brand-text-light mb-1 pl-0.5">Document Display Name (Optional)</label>
               <input 
                 type="text"
                 placeholder="e.g. Employee Evaluation Checklist"
@@ -620,7 +620,7 @@ export default function AdminScreen({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5 pl-0.5">Category</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5 pl-0.5">Category</label>
                 <select
                   value={docCategory}
                   onChange={(e) => setDocCategory(e.target.value as any)}
@@ -633,7 +633,7 @@ export default function AdminScreen({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-brand-text-light mb-1.5 pl-0.5">Google Drive URL (Optional)</label>
+                <label className="block text-xs font-bold text-brand-text-light mb-1.5 pl-0.5">Google Drive URL (Optional)</label>
                 <input 
                   type="url"
                   placeholder="https://drive.google.com/..."
@@ -648,7 +648,7 @@ export default function AdminScreen({
               <label className={`w-full py-4 border-2 border-dashed border-brand-green-mid hover:border-brand-green hover:bg-brand-green-light transition-all rounded-xl bg-brand-green-light/40 flex flex-col items-center justify-center gap-1.5 text-center ${isUploadingDoc ? 'cursor-wait opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
                 <FileText className="w-7 h-7 text-brand-green" />
                 <span className="text-xs text-brand-text font-bold">{isUploadingDoc ? 'Uploading...' : 'Choose staff document file...'}</span>
-                <span className="text-[10px] text-brand-text-light">Accepts PDF, Word, JPEG, PNG, Excel</span>
+                <span className="text-xs text-brand-text-light">Accepts PDF, Word, JPEG, PNG, Excel</span>
                 <input
                   type="file"
                   className="hidden"
@@ -661,7 +661,7 @@ export default function AdminScreen({
           </div>
 
           <div className="space-y-2.5">
-            <h3 className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider pl-1">All Vault Document Files ({docs.length})</h3>
+            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">All Vault Document Files ({docs.length})</h3>
             <div className="space-y-2.5 max-h-72 overflow-y-auto no-scrollbar">
               {docs.length === 0 ? (
                 <div className="text-xs text-brand-text-light bg-white border border-brand-border rounded-xl p-6 text-center italic">
@@ -672,7 +672,7 @@ export default function AdminScreen({
                   <div key={d.id} className="bg-white rounded-xl border border-brand-border p-3 flex justify-between items-center text-xs">
                     <div className="text-left flex-1 min-width-0 mr-3">
                       <div className="font-bold text-brand-text truncate leading-tight">{d.displayName}</div>
-                      <div className="text-[10px] text-brand-text-light mt-0.5 uppercase font-medium tracking-wide">
+                      <div className="text-xs text-brand-text-light mt-0.5 uppercase font-medium tracking-wide">
                         {d.cat} &middot; {d.size} &middot; {d.date}
                         {d.driveLink && <span className="text-brand-green-dark"> &middot; Drive Link</span>}
                       </div>

@@ -348,7 +348,7 @@ export default function App() {
                 </div>
                 <div>
                   <h1 className="font-poppins font-bold text-white text-[15px] leading-tight tracking-tight">Stewpot Connect</h1>
-                  <p className="text-[11px] text-white/50 mt-0.5">Staff Hub &amp; Communications</p>
+                  <p className="text-[13px] text-white/50 mt-0.5">Staff Hub &amp; Communications</p>
                 </div>
               </div>
             </div>
@@ -357,7 +357,7 @@ export default function App() {
             <div className="mx-5 border-t border-white/10 mb-2" />
 
             {/* Nav Section Label */}
-            <p className="px-5 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-white/30">Navigation</p>
+            <p className="px-5 pt-3 pb-1.5 text-xs font-bold tracking-widest uppercase text-white/30">Navigation</p>
 
             {/* Nav links */}
             <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
@@ -399,7 +399,7 @@ export default function App() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold text-white truncate leading-tight">{currentUser.name}</div>
-                  <div className="text-[11px] text-white/50 mt-0.5 truncate">{currentUser.title || (currentUser.role === 'admin' ? 'Administrator' : 'Staff Member')}</div>
+                  <div className="text-[13px] text-white/50 mt-0.5 truncate">{currentUser.title || (currentUser.role === 'admin' ? 'Administrator' : 'Staff Member')}</div>
                 </div>
                 <button
                   onClick={doSignOut}
@@ -568,7 +568,7 @@ export default function App() {
                 { id: 'profile',   label: 'Profile',   Icon: UserIcon },
               ] as { id: string; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
                 <button key={id} onClick={() => setActiveTab(id)}
-                  className={`flex flex-col items-center gap-0.5 text-[10px] font-medium px-3 py-1 transition-all ${activeTab === id ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                  className={`flex flex-col items-center gap-0.5 text-xs font-medium px-3 py-1 transition-all ${activeTab === id ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
                 >
                   <Icon className={`w-5 h-5 ${activeTab === id ? 'text-brand-green' : 'text-brand-text-light'}`} />
                   {label}
@@ -652,7 +652,7 @@ export default function App() {
         <div className="w-full sm:w-[390px] h-screen sm:h-[844px] bg-brand-cream sm:rounded-[44px] overflow-hidden relative shadow-[0_25px_60px_rgba(0,0,0,0.55),0_0_0_2px_#555,inset_0_0_0_2px_#333] flex flex-col flex-shrink-0">
           
           {/* Status Bar */}
-          <div className="h-11 flex items-end justify-between px-6 pb-2 text-[11px] font-bold text-brand-text flex-shrink-0 select-none z-30">
+          <div className="h-11 flex items-end justify-between px-6 pb-2 text-[13px] font-bold text-brand-text flex-shrink-0 select-none z-30">
             <span className="font-sans leading-none">9:41</span>
             
             {/* Notch */}
@@ -670,7 +670,7 @@ export default function App() {
                 <path d="M3.5 6.5C5.5 4.5 10.5 4.5 12.5 6.5"/>
                 <path d="M6 9C7 8 9 8 10 9"/>
               </svg>
-              <span className="leading-none text-[9px]">🔋</span>
+              <span className="leading-none text-[13px]">🔋</span>
             </div>
           </div>
 
@@ -778,7 +778,7 @@ export default function App() {
               
               <button 
                 onClick={() => setActiveTab('home')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'home' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'home' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <Home className={`w-5.5 h-5.5 ${activeTab === 'home' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Home
@@ -787,7 +787,7 @@ export default function App() {
 
               <button 
                 onClick={() => setActiveTab('stories')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'stories' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'stories' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <Mic className={`w-5.5 h-5.5 ${activeTab === 'stories' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Stories
@@ -796,7 +796,7 @@ export default function App() {
 
               <button 
                 onClick={() => setActiveTab('forum')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'forum' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'forum' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <MessageSquare className={`w-5.5 h-5.5 ${activeTab === 'forum' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Community
@@ -805,7 +805,7 @@ export default function App() {
 
               <button
                 onClick={() => setActiveTab('resources')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'resources' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'resources' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <BookOpen className={`w-5.5 h-5.5 ${activeTab === 'resources' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Resources
@@ -814,7 +814,7 @@ export default function App() {
 
               <button
                 onClick={() => setActiveTab('directory')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'directory' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'directory' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <Users className={`w-5.5 h-5.5 ${activeTab === 'directory' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Directory
@@ -823,7 +823,7 @@ export default function App() {
 
               <button 
                 onClick={() => setActiveTab('profile')}
-                className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-all ${activeTab === 'profile' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'profile' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
                 <UserIcon className={`w-5.5 h-5.5 ${activeTab === 'profile' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Profile

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { User, Post, PostCategory, PostAttachment } from '../types';
-import { Send, FileText, Image as ImageIcon, Link, X, Trash2, Edit3, Search } from 'lucide-react';
+import { Send, FileText, Image as ImageIcon, Link, X, Trash2, Edit3, Search, Download, ZoomIn } from 'lucide-react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
+import { syncToDrive } from '../lib/driveSync';
 
 interface CommunityScreenProps {
   currentUser: User;
@@ -29,6 +30,7 @@ export default function CommunityScreen({
   const [postLink, setPostLink] = useState('');
   const [attachment, setAttachment] = useState<PostAttachment | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [enlargedPhoto, setEnlargedPhoto] = useState<{ url: string; name: string } | null>(null);
 
   const categories: (PostCategory | 'All')[] = ['All', 'Announcement', 'Kudos', 'Update', 'Question'];
   
@@ -87,6 +89,7 @@ export default function CommunityScreen({
         await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
         const url = await getDownloadURL(photoRef);
         setAttachment({ name: file.name, type: 'image/jpeg', data: url, kind: 'photo' });
+        syncToDrive(url, photoRef.name, 'community-photos');
       } catch (err) {
         console.error('Photo upload error:', err);
         alert('Failed to upload photo. Please try again.');
@@ -234,7 +237,7 @@ export default function CommunityScreen({
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-bold text-sm text-brand-text leading-tight">{p.author}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-brand-text-light font-medium">{p.date}</span>
+                        <span className="text-xs text-brand-text-light font-medium">{p.date}</span>
                         {canDelete && (
                           <div className="flex gap-1">
                             {isOwn && <button
@@ -258,7 +261,7 @@ export default function CommunityScreen({
 
                     {/* Category pill */}
                     <div className="mb-2">
-                      <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-full ${getCatColor(p.cat)}`}>
+                      <span className={`inline-flex items-center gap-1 text-[13px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-full ${getCatColor(p.cat)}`}>
                         {getCatEmoji(p.cat)} {p.cat}
                       </span>
                     </div>
@@ -272,11 +275,19 @@ export default function CommunityScreen({
                     {p.attachment && (
                       <div className="mt-3">
                         {p.attachment.kind === 'photo' ? (
-                          <img 
-                            src={p.attachment.data} 
-                            alt="Attachment preview" 
-                            className="max-width-full max-h-48 rounded-xl object-cover shadow-sm border border-brand-border"
-                          />
+                          <div
+                            className="relative group cursor-zoom-in"
+                            onClick={(e) => { e.stopPropagation(); setEnlargedPhoto({ url: p.attachment!.data, name: p.attachment!.name }); }}
+                          >
+                            <img
+                              src={p.attachment.data}
+                              alt="Attachment preview"
+                              className="w-full max-h-64 rounded-xl object-cover shadow-sm border border-brand-border"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all flex items-center justify-center">
+                              <ZoomIn className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 drop-shadow transition-all" />
+                            </div>
+                          </div>
                         ) : (
                           <div className="bg-brand-cream border border-brand-border rounded-xl p-3 flex items-center justify-between text-xs">
                             <span className="truncate font-semibold text-brand-text flex items-center gap-1.5">&#x1F4CE; {p.attachment.name}</span>
@@ -314,6 +325,47 @@ export default function CommunityScreen({
         )}
       </div>
 
+      {/* Enlarged Photo Modal */}
+      {enlargedPhoto && (
+        <div
+          className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4"
+          onClick={() => setEnlargedPhoto(null)}
+        >
+          <img
+            src={enlargedPhoto.url}
+            alt="Full size"
+            className="max-w-full max-h-[75vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="flex gap-3 mt-5" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(enlargedPhoto.url);
+                  const blob = await res.blob();
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = enlargedPhoto.name || 'photo.jpg';
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                } catch {
+                  alert('Could not download the image. Try long-pressing on it instead.');
+                }
+              }}
+              className="flex items-center gap-2 bg-white text-brand-text font-bold text-xs px-5 py-2.5 rounded-full shadow"
+            >
+              <Download className="w-4 h-4" /> Save Photo
+            </button>
+            <button
+              onClick={() => setEnlargedPhoto(null)}
+              className="flex items-center gap-2 bg-white/20 text-white font-bold text-xs px-5 py-2.5 rounded-full"
+            >
+              <X className="w-4 h-4" /> Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Detailed Compose Post Modal */}
       {isComposeOpen && (
         <div className="absolute inset-0 bg-brand-cream z-50 flex flex-col p-5 animate-slide-up">
@@ -338,14 +390,14 @@ export default function CommunityScreen({
             
             {/* Category Select */}
             <div>
-              <label className="block text-[11px] font-bold text-brand-text-light uppercase tracking-wider mb-1.5">Select category:</label>
+              <label className="block text-[13px] font-bold text-brand-text-light uppercase tracking-wider mb-1.5">Select category:</label>
               <div className="grid grid-cols-4 gap-2">
                 {(['Announcement', 'Kudos', 'Update', 'Question'] as PostCategory[]).map((cat) => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
-                    className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all focus:outline-none cursor-pointer ${category === cat ? 'bg-brand-green text-white border-brand-green' : 'bg-white text-brand-text border-brand-border'}`}
+                    className={`py-2 text-xs font-bold rounded-lg border text-center transition-all focus:outline-none cursor-pointer ${category === cat ? 'bg-brand-green text-white border-brand-green' : 'bg-white text-brand-text border-brand-border'}`}
                   >
                     {getCatEmoji(cat)} {cat}
                   </button>

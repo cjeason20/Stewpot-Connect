@@ -66,7 +66,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
         ) : (
           deptKeys.map((dept) => (
             <div key={dept}>
-              <h2 className="text-[10px] font-bold text-brand-text-light uppercase tracking-wider mb-2 pl-1">
+              <h2 className="text-xs font-bold text-brand-text-light uppercase tracking-wider mb-2 pl-1">
                 {dept}
               </h2>
               <div className="bg-white rounded-xl border border-brand-border overflow-hidden divide-y divide-brand-border">
@@ -104,7 +104,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-brand-text-light truncate mt-0.5">
+                        <div className="text-xs text-brand-text-light truncate mt-0.5">
                           {u.title || 'Staff Member'}
                         </div>
 
@@ -113,7 +113,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
                           {u.email && (
                             <a
                               href={`mailto:${u.email}`}
-                              className="flex items-center gap-1 text-[10px] text-brand-green-dark font-semibold hover:underline"
+                              className="flex items-center gap-1 text-xs text-brand-green-dark font-semibold hover:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Mail className="w-3 h-3 flex-shrink-0" />
@@ -123,7 +123,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
                           {u.phone && (
                             <a
                               href={`tel:${u.phone.replace(/\D/g, '')}`}
-                              className="flex items-center gap-1 text-[10px] text-brand-green-dark font-semibold hover:underline"
+                              className="flex items-center gap-1 text-xs text-brand-green-dark font-semibold hover:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Phone className="w-3 h-3 flex-shrink-0" />

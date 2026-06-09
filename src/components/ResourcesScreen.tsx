@@ -90,7 +90,7 @@ export default function ResourcesScreen({
           
           return (
             <div key={key} className="space-y-2.5">
-              <div className="text-[11px] font-bold text-brand-text-light uppercase tracking-wider pl-1">
+              <div className="text-[13px] font-bold text-brand-text-light uppercase tracking-wider pl-1">
                 {cat.title}
               </div>
               
@@ -116,7 +116,7 @@ export default function ResourcesScreen({
                           <h4 className="text-xs font-bold text-brand-text truncate leading-tight">
                             {d.displayName}
                           </h4>
-                          <p className="text-[10px] text-brand-text-light mt-0.5">
+                          <p className="text-xs text-brand-text-light mt-0.5">
                             {d.size} &middot; {d.date}
                           </p>
                         </div>
@@ -171,7 +171,7 @@ export default function ResourcesScreen({
           <div className="bg-[#1C1C1E] px-4 py-3 pb-3 flex items-center justify-between text-white flex-shrink-0 border-b border-white/5">
             <div className="text-left min-width-0 flex-1 mr-4">
               <h3 className="text-sm font-bold truncate">{activeDoc.displayName}</h3>
-              <p className="text-[10px] text-zinc-400 mt-0.5">{activeDoc.size} &middot; {activeDoc.date}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">{activeDoc.size} &middot; {activeDoc.date}</p>
             </div>
             
             <div className="flex items-center gap-3 flex-shrink-0">
