@@ -175,23 +175,35 @@ export default function HomeScreen({
               No recent announcements. Let's make sure everyone's updated!
             </div>
           ) : (
-            announcements.map((p) => (
-              <div 
-                key={p.id}
-                onClick={() => onSetTab('forum')}
-                className="bg-white rounded-xl border border-brand-border p-3.5 hover:border-brand-green/30 transition-all cursor-pointer text-left"
-              >
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full mb-2">
-                  <Megaphone className="w-3 h-3" /> Announcement
+            announcements.map((p) => {
+              const hasPhoto = p.attachment?.kind === 'photo' && p.attachment.data;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => onSetTab('forum')}
+                  className="bg-white rounded-xl border border-brand-border overflow-hidden hover:border-brand-green/30 transition-all cursor-pointer text-left"
+                >
+                  {hasPhoto && (
+                    <img
+                      src={p.attachment!.data}
+                      alt="Post photo"
+                      className="w-full h-36 object-cover"
+                    />
+                  )}
+                  <div className="p-3.5">
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full mb-2">
+                      <Megaphone className="w-3 h-3" /> Announcement
+                    </div>
+                    <h3 className="text-xs font-semibold text-brand-text line-clamp-2 leading-relaxed">
+                      {p.text}
+                    </h3>
+                    <div className="text-[10px] text-brand-text-light mt-2.5 font-medium">
+                      {p.author} &middot; {p.date}
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xs font-semibold text-brand-text line-clamp-2 leading-relaxed">
-                  {p.text}
-                </h3>
-                <div className="text-[10px] text-brand-text-light mt-2.5 font-medium">
-                  {p.author} &middot; {p.date}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -216,22 +228,32 @@ export default function HomeScreen({
           ) : (
             recentPosts.map((p) => {
               const { pill, emoji } = getCatStyle(p.cat);
+              const hasPhoto = p.attachment?.kind === 'photo' && p.attachment.data;
               return (
                 <div
                   key={p.id}
                   onClick={() => onSetTab('forum')}
-                  className="bg-white rounded-xl border border-brand-border p-3.5 hover:border-brand-green/30 transition-all cursor-pointer text-left"
+                  className="bg-white rounded-xl border border-brand-border overflow-hidden hover:border-brand-green/30 transition-all cursor-pointer text-left"
                 >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
-                      {emoji} {p.cat}
-                    </span>
-                    <span className="text-[10px] text-brand-text-light font-medium ml-auto">{p.date}</span>
-                  </div>
-                  {p.text && (
-                    <p className="text-xs text-brand-text-mid leading-relaxed line-clamp-2">{p.text}</p>
+                  {hasPhoto && (
+                    <img
+                      src={p.attachment!.data}
+                      alt="Post photo"
+                      className="w-full h-36 object-cover"
+                    />
                   )}
-                  <div className="text-[10px] text-brand-text-light mt-2 font-medium">{p.author}</div>
+                  <div className="p-3.5">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
+                        {emoji} {p.cat}
+                      </span>
+                      <span className="text-[10px] text-brand-text-light font-medium ml-auto">{p.date}</span>
+                    </div>
+                    {p.text && (
+                      <p className="text-xs text-brand-text-mid leading-relaxed line-clamp-2">{p.text}</p>
+                    )}
+                    <div className="text-[10px] text-brand-text-light mt-2 font-medium">{p.author}</div>
+                  </div>
                 </div>
               );
             })
