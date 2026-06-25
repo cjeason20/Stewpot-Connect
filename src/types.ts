@@ -34,7 +34,7 @@ export interface Story {
   waiverUrl?: string;
   notes?: string;
   hasConsent: boolean;
-  consentType: string; // 'none' | 'internal' | 'external'
+  consentType: string; // 'named' | 'anonymous'
 }
 
 export interface CalendarEvent {

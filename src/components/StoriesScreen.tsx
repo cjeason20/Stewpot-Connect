@@ -30,7 +30,7 @@ export default function StoriesScreen({
   const [title, setTitle] = useState('');
   const [program, setProgram] = useState('');
   const [interviewee, setInterviewee] = useState('');
-  const [consentType, setConsentType] = useState('none'); // 'none' | 'internal' | 'external'
+  const [consentType, setConsentType] = useState('none'); // 'none' | 'named' | 'anonymous'
   const [notes, setNotes] = useState('');
 
   // Story photo
@@ -267,7 +267,7 @@ export default function StoriesScreen({
       return;
     }
     if (consentType === 'none') {
-      alert('Consent selection is required.');
+      alert('Please select whether the participant\'s name can be used or should stay anonymous.');
       return;
     }
 
@@ -315,7 +315,7 @@ export default function StoriesScreen({
         program,
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         notes: notes.trim(),
-        hasConsent: consentType !== 'none',
+        hasConsent: true,
         consentType,
         author: currentUser.name,
         authorId: currentUser.id,
@@ -358,13 +358,13 @@ export default function StoriesScreen({
               </div>
               <div className="text-left flex-1">
                 <h3 className="text-sm font-bold text-brand-text">Record New Story</h3>
-                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 5-step staff process</p>
+                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 4-step staff process</p>
               </div>
               <span className="text-xl text-brand-green-dark font-medium">&rsaquo;</span>
             </div>
 
-            <div className="grid grid-cols-5 gap-1 mt-4 pt-3 border-t border-brand-border text-[13px] text-brand-text-light text-center font-semibold">
-              {[['1','Details'],['2','Consent'],['3','Waiver'],['4','Voice'],['5','Notes']].map(([n, label]) => (
+            <div className="grid grid-cols-4 gap-1 mt-4 pt-3 border-t border-brand-border text-[13px] text-brand-text-light text-center font-semibold">
+              {[['1','Details'],['2','Consent'],['3','Voice'],['4','Notes']].map(([n, label]) => (
                 <div key={n}>
                   <div className="w-5 h-5 bg-brand-green-light text-brand-green rounded-full mx-auto flex items-center justify-center text-xs mb-1">{n}</div>
                   {label}
@@ -427,12 +427,10 @@ export default function StoriesScreen({
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      {s.consentType === 'external' ? (
-                        <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Public Consent</span>
-                      ) : s.consentType === 'internal' ? (
-                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Internal Training</span>
+                      {s.consentType === 'named' ? (
+                        <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Name May Be Used</span>
                       ) : (
-                        <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Archival Only</span>
+                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Anonymous</span>
                       )}
                       
                       {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
@@ -590,17 +588,16 @@ export default function StoriesScreen({
                     />
                   </div>
 
-                  {/* Consent Type */}
+                  {/* Name Usage Consent */}
                   <div>
-                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Consent Type</label>
+                    <label className="block text-xs font-bold text-brand-text-light mb-1.5">Name Usage</label>
                     <select
                       value={editingStory.consentType}
-                      onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: e.target.value !== 'none' })}
+                      onChange={(e) => setEditingStory({ ...editingStory, consentType: e.target.value, hasConsent: true })}
                       className="w-full px-3 py-2.5 bg-brand-cream border border-brand-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-green"
                     >
-                      <option value="external">External / Public Communications</option>
-                      <option value="internal">Internal Staff Training Only</option>
-                      <option value="restricted">Restricted Archivist Only</option>
+                      <option value="named">Name May Be Used</option>
+                      <option value="anonymous">Keep Anonymous</option>
                     </select>
                   </div>
 
@@ -822,13 +819,13 @@ export default function StoriesScreen({
             </button>
             <div>
               <h2 className="text-base font-bold text-brand-text">New Voice Story</h2>
-              <p className="text-xs text-brand-text-light">Step {step} of 5</p>
+              <p className="text-xs text-brand-text-light">Step {step} of 4</p>
             </div>
           </div>
 
           {/* Stepper Progress Bar */}
           <div className="px-5 py-3 bg-brand-cream flex gap-1.5 flex-shrink-0">
-            {[1, 2, 3, 4, 5].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div 
                 key={s} 
                 className={`h-1.5 flex-1 rounded-full ${s <= step ? 'bg-brand-green' : 'bg-brand-green-mid/40'}`} 
@@ -894,71 +891,14 @@ export default function StoriesScreen({
               </div>
             )}
 
-            {/* STEP 2: CONSENT CHECK */}
+            {/* STEP 2: CONSENT (WAIVER + SIGNATURE + NAME USAGE) */}
             {step === 2 && (
-              <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-brand-text">3. Client Information Consent</h3>
-                <p className="text-[13px] text-brand-text-mid leading-relaxed mb-4">
-                  Please establish which type of consent the participant signed or verified verbally for this story.
-                </p>
-
-                <div className="space-y-2.5">
-                  <div 
-                    onClick={() => setConsentType('external')}
-                    className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'external' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
-                  >
-                    <div className="font-bold text-xs text-brand-text">External / Public Communications</div>
-                    <p className="text-xs text-brand-text-mid mt-0.5">Authorizes use on website, social media, newsletters, and fundraisers.</p>
-                  </div>
-
-                  <div 
-                    onClick={() => setConsentType('internal')}
-                    className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'internal' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
-                  >
-                    <div className="font-bold text-xs text-brand-text">Internal Staff Training &amp; Grant Audits Only</div>
-                    <p className="text-xs text-brand-text-mid mt-0.5">Story represents internal study or validation of program performance in reports.</p>
-                  </div>
-
-                  <div 
-                    onClick={() => setConsentType('restricted')}
-                    className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'restricted' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
-                  >
-                    <div className="font-bold text-xs text-brand-text">Restricted Archivist Collection Only</div>
-                    <p className="text-xs text-brand-text-mid mt-0.5">Identities are anonymized immediately. To be referenced for historic archives.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2.5 pt-2">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (consentType === 'none') {
-                        alert('Please select a consent preference.');
-                        return;
-                      }
-                      setStep(3);
-                    }}
-                    className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
-                  >
-                    Continue to Waiver
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: CONSENT WAIVER + SIGNATURE PAD */}
-            {step === 3 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
 
                 {/* Header */}
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-brand-green flex-shrink-0" />
-                  <h3 className="text-xs font-bold text-brand-text">Consent Waiver &amp; Signature</h3>
+                  <h3 className="text-xs font-bold text-brand-text">Consent &amp; Signature</h3>
                 </div>
 
                 {/* Waiver text */}
@@ -972,12 +912,34 @@ export default function StoriesScreen({
                   <p>
                     I understand that my story and/or likeness may be shared on Stewpot Community Services's website, social media
                     channels, print publications, newsletters, and other public or internal materials, consistent
-                    with the consent type selected in the previous step.
+                    with the name usage preference selected below.
                   </p>
                   <p>
                     I confirm that I am 18 years of age or older, or that a parent/guardian has signed on my behalf,
                     and that I have provided this consent freely and without coercion.
                   </p>
+                </div>
+
+                {/* Name usage preference */}
+                <div>
+                  <label className="block text-xs font-bold text-brand-text mb-2">Name Usage Preference</label>
+                  <div className="space-y-2.5">
+                    <div
+                      onClick={() => setConsentType('named')}
+                      className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'named' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
+                    >
+                      <div className="font-bold text-xs text-brand-text">My Name May Be Used</div>
+                      <p className="text-xs text-brand-text-mid mt-0.5">My real name can be shared alongside this story.</p>
+                    </div>
+
+                    <div
+                      onClick={() => setConsentType('anonymous')}
+                      className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'anonymous' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
+                    >
+                      <div className="font-bold text-xs text-brand-text">Keep Me Anonymous</div>
+                      <p className="text-xs text-brand-text-mid mt-0.5">My name should not be shared alongside this story.</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Signature pad label */}
@@ -1030,13 +992,19 @@ export default function StoriesScreen({
 
                 <div className="flex gap-2.5 pt-1">
                   <button
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(1)}
                     className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
                   >
                     Back
                   </button>
                   <button
-                    onClick={() => setStep(4)}
+                    onClick={() => {
+                      if (consentType === 'none') {
+                        alert('Please select whether the participant\'s name can be used or should stay anonymous.');
+                        return;
+                      }
+                      setStep(3);
+                    }}
                     className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
                   >
                     {hasSigned ? 'Continue to Record' : 'Skip & Continue'}
@@ -1045,10 +1013,10 @@ export default function StoriesScreen({
               </div>
             )}
 
-            {/* STEP 4: AUDIO CAPTURE */}
-            {step === 4 && (
+            {/* STEP 3: AUDIO CAPTURE */}
+            {step === 3 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-brand-text">4. Record Voice or Notes</h3>
+                <h3 className="text-xs font-bold text-brand-text">3. Record Voice or Notes</h3>
                 
                 <div className="flex flex-col items-center py-6">
                   
@@ -1128,14 +1096,14 @@ export default function StoriesScreen({
                   <button
                     onClick={() => {
                       if (isRecording) handleStopRecording();
-                      setStep(3);
+                      setStep(2);
                     }}
                     className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
                   >
                     Back
                   </button>
                   <button
-                    onClick={() => setStep(5)}
+                    onClick={() => setStep(4)}
                     className="flex-1 py-3 bg-brand-green text-white font-bold rounded-xl text-xs"
                   >
                     Continue to Notes
@@ -1144,10 +1112,10 @@ export default function StoriesScreen({
               </div>
             )}
 
-            {/* STEP 5: NOTES & COMMIT */}
-            {step === 5 && (
+            {/* STEP 4: NOTES & COMMIT */}
+            {step === 4 && (
               <div className="bg-white rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-brand-text">5. Optional Staff Notes &amp; Summary</h3>
+                <h3 className="text-xs font-bold text-brand-text">4. Optional Staff Notes &amp; Summary</h3>
                 <p className="text-[13px] text-brand-text-mid leading-relaxed">
                   Enter key transcripts, case notes, or brief contextual information regarding this file.
                 </p>
@@ -1196,7 +1164,7 @@ export default function StoriesScreen({
 
                 <div className="flex gap-2.5 pt-2">
                   <button
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(3)}
                     className="flex-1 py-3 bg-brand-cream border border-brand-border rounded-xl text-xs font-semibold text-brand-text-mid"
                   >
                     Back
