@@ -74,10 +74,11 @@ export default function StoriesScreen({
   };
 
   const programsList = [
-    'Community Kitchen', 'Clothing Closet', 'Food Pantry', 'Housing Assistance',
-    'Opportunity Center', "Matt's House", 'Billy Brumfield Shelter',
-    'Special Events & Communications', 'Teen Services', "Children's Services",
-    'Meals on Wheels', 'Volunteer Programs', 'Admin'
+    'Afterschool Program', 'Billy Brumfield Shelter', 'Case Management',
+    'Clothing Closet', 'Community Kitchen', 'Food Pantry', 'HeARTWorks',
+    'Housing Assistance', 'Legal Clinic', "Matt's House", 'Meals on Wheels',
+    'Opportunity Center', 'Special Events & Communications', 'Street Outreach',
+    'Summer Camp', 'Transitional Shelter'
   ];
 
   const handleStartRecording = async () => {
