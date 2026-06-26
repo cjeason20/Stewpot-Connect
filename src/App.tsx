@@ -571,7 +571,7 @@ export default function App() {
                       <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
                         onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
                     )}
-                    {activeTab === 'admin' && (
+                    {activeTab === 'admin' && currentUser.role === 'admin' && (
                       <AdminScreen currentUser={currentUser} users={users} docs={docs}
                         onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
                         onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
@@ -632,7 +632,7 @@ export default function App() {
                   <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
                     onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
                 )}
-                {activeTab === 'admin' && (
+                {activeTab === 'admin' && currentUser.role === 'admin' && (
                   <AdminScreen currentUser={currentUser} users={users} docs={docs}
                     onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
                     onAddDoc={handleAddDoc} onDeleteDoc={handleDeleteDoc}
@@ -844,7 +844,7 @@ export default function App() {
                   />
                 )}
 
-                {activeTab === 'admin' && (
+                {activeTab === 'admin' && currentUser.role === 'admin' && (
                   <AdminScreen
                     currentUser={currentUser}
                     users={users}
