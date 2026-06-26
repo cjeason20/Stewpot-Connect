@@ -65,7 +65,7 @@ export default function ResourcesScreen({
       {/* Header */}
       <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0">
         <h1 className="font-poppins font-bold text-2xl">Staff Resources</h1>
-        <p className="text-xs text-[#E8F5E9]/90 mt-1">Official documents, template files &amp; agency forms</p>
+        <p className="text-xs text-[#E8F5E9]/90 mt-1">Stewpot policies, documents, &amp; helpful resources</p>
       </div>
 
       {/* Styled Search Field */}

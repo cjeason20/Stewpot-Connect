@@ -250,8 +250,8 @@ export default function AdminScreen({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="font-poppins font-bold text-2xl">Agency Vault Control</h1>
-            <p className="text-xs text-[#E8F5E9]/90">Stewpot portal for users &amp; official forms</p>
+            <h1 className="font-poppins font-bold text-2xl">Admin Panel</h1>
+            <p className="text-xs text-[#E8F5E9]/90">Edit employee directory, upload resources, and more</p>
           </div>
         </div>
       </div>
@@ -290,7 +290,7 @@ export default function AdminScreen({
           
           {/* User list */}
           <div className="space-y-2.5">
-            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">Colleague Directory ({users.length})</h3>
+            <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">Employee Directory ({users.length})</h3>
             <div className="space-y-2 max-h-80 overflow-y-auto no-scrollbar bg-white rounded-xl border border-brand-border divide-y divide-brand-border">
               {users.map((u) => (
                 <div key={u.id} className="p-3.5 flex items-center gap-3 justify-between">
@@ -899,6 +899,7 @@ export default function AdminScreen({
                     id: String(Date.now()),
                     ...newEvent,
                     createdBy: currentUser.name,
+                    status: 'approved',
                   };
                   try {
                     await onAddEvent(ev);
@@ -914,19 +915,65 @@ export default function AdminScreen({
             )}
           </div>
 
+          {/* Pending submissions awaiting approval */}
+          {events.some(e => e.status === 'pending') && (
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider pl-1">
+                Pending Approval ({events.filter(e => e.status === 'pending').length})
+              </h3>
+              <div className="space-y-2">
+                {events.filter(e => e.status === 'pending').sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
+                  <div key={ev.id} className="bg-amber-50 rounded-xl border border-amber-200 p-3.5 flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-brand-text truncate">{ev.title}</div>
+                      <div className="text-[11px] text-brand-text-light mt-0.5">
+                        {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {!ev.allDay && ev.time ? ` · ${ev.time}` : ev.allDay ? ' · All day' : ''}
+                        {ev.location ? ` · ${ev.location}` : ''}
+                      </div>
+                      <div className="text-[11px] text-amber-700 mt-0.5">Submitted by {ev.submitterName || 'a member'}</div>
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={async () => {
+                          try { await onUpdateEvent({ ...ev, status: 'approved' }); } catch { alert('Failed to approve.'); }
+                        }}
+                        className="p-1.5 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer"
+                        title="Approve"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Reject and remove this event request?')) {
+                            try { await onDeleteEvent(ev.id); } catch { alert('Failed to reject.'); }
+                          }
+                        }}
+                        className="p-1.5 border border-transparent hover:border-red-200 text-red-400 hover:bg-red-50 rounded-lg cursor-pointer"
+                        title="Reject"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Event list */}
           <div className="space-y-2.5">
             <h3 className="text-xs font-bold text-brand-text-light uppercase tracking-wider pl-1">
-              All Events ({events.length})
+              All Events ({events.filter(e => e.status !== 'pending').length})
             </h3>
 
-            {events.length === 0 ? (
+            {events.filter(e => e.status !== 'pending').length === 0 ? (
               <div className="bg-white border border-brand-border rounded-xl p-6 text-center text-xs text-brand-text-light italic">
                 No events yet. Add your first one above.
               </div>
             ) : (
               <div className="space-y-2">
-                {[...events].sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
+                {[...events].filter(e => e.status !== 'pending').sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
                   <div key={ev.id} className="bg-white rounded-xl border border-brand-border p-3.5 flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-brand-text truncate">{ev.title}</div>

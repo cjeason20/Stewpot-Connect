@@ -1,28 +1,50 @@
 /**
  * Stewpot Connect — Google Drive Sync
- * Paste this entire file into a new Google Apps Script project, then deploy
- * it as a Web App (Execute as: Me, Who has access: Anyone).
  *
- * The script receives the Firebase Storage download URL for each uploaded
- * file, fetches it, and saves a copy to the appropriate Drive folder.
+ * Deploy this as a Google Apps Script web app (see src/lib/driveSync.ts for
+ * the client side that calls it). It receives a fire-and-forget POST
+ * containing a Firebase Storage download URL, fetches the file
+ * server-side, and saves a copy into a matching subfolder inside a parent
+ * "Stewpot Connect Uploads" folder in your Google Drive. Folders are
+ * created automatically the first time they're needed — no manual setup
+ * required in Drive itself.
+ *
+ * Setup:
+ *  1. Go to https://script.google.com and create a new project.
+ *  2. Delete the placeholder code and paste in this entire file.
+ *  3. Click "Deploy" → "New deployment".
+ *     - Click the gear icon next to "Select type" and choose "Web app".
+ *     - Execute as: Me (your Google account).
+ *     - Who has access: Anyone.
+ *  4. Click "Deploy". The first time, Google will ask you to authorize
+ *     the script — review and allow it (it only touches your own Drive).
+ *  5. Copy the "Web app URL" it gives you (ends in /exec).
+ *  6. Set that URL as the VITE_DRIVE_SYNC_URL environment variable in
+ *     Netlify (Site settings → Environment variables), then redeploy.
+ *
+ * If you ever update this script's code, you must create a "New
+ * deployment" again (Deploy → Manage deployments → edit → new version)
+ * for the changes to take effect on the existing /exec URL.
  */
 
-const FOLDER_IDS = {
-  'audio':              '1blR-NupdPOe2JoZ8_dcLLPl4U6DkQfHs',
-  'story-photos':       '1Y97nLnL5Wv1ZnMNwmMRB87uJc8T-a38j',
-  'community-photos':   '1RliVUSsfZkozlBPw-QkWOzoXeDVxXlZ1',
-  'profile-photos':     '15pai2Plr8Vvi_M7H-mHRh9YysDTTPmay',
-  'waivers':            '1cp4qaqADLdQGNqMlhmkVQQr0YCdYUOGJ',
+var ROOT_FOLDER_NAME = 'Stewpot Connect Uploads';
+
+var FOLDER_NAMES = {
+  'audio':              'Audio Stories',
+  'story-photos':       'Story Photos',
+  'community-photos':   'Community Photos',
+  'profile-photos':     'Profile Photos',
+  'waivers':            'Waivers',
 };
 
 function doPost(e) {
   try {
     var fileUrl  = e.parameter.fileUrl;
     var fileName = e.parameter.fileName || ('upload_' + Date.now());
-    var folder   = e.parameter.folder;
+    var folderKey = e.parameter.folder;
 
-    if (!fileUrl || !folder || !FOLDER_IDS[folder]) {
-      throw new Error('Missing or invalid parameters. folder=' + folder);
+    if (!fileUrl || !folderKey) {
+      throw new Error('Missing or invalid parameters. folder=' + folderKey);
     }
 
     var response = UrlFetchApp.fetch(fileUrl, { muteHttpExceptions: true });
@@ -30,8 +52,8 @@ function doPost(e) {
       throw new Error('Could not fetch file (HTTP ' + response.getResponseCode() + ')');
     }
 
-    var blob        = response.getBlob().setName(fileName);
-    var driveFolder = DriveApp.getFolderById(FOLDER_IDS[folder]);
+    var blob = response.getBlob().setName(fileName);
+    var driveFolder = getOrCreateFolder(folderKey);
     driveFolder.createFile(blob);
 
     return ContentService
@@ -43,6 +65,15 @@ function doPost(e) {
       .createTextOutput(JSON.stringify({ success: false, error: String(err) }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function getOrCreateFolder(folderKey) {
+  var rootFolders = DriveApp.getFoldersByName(ROOT_FOLDER_NAME);
+  var root = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder(ROOT_FOLDER_NAME);
+
+  var subName = FOLDER_NAMES[folderKey] || folderKey;
+  var subFolders = root.getFoldersByName(subName);
+  return subFolders.hasNext() ? subFolders.next() : root.createFolder(subName);
 }
 
 // Health-check — visit the web-app URL in a browser to confirm it's live.

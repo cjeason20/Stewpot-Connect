@@ -187,7 +187,7 @@ export default function CommunityScreen({
           <Search className="w-4 h-4 text-brand-text-light flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search posts by keyword or author…"
+            placeholder="Search posts by keyword or employee name…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 text-xs text-brand-text bg-transparent focus:outline-none placeholder:text-brand-text-light"

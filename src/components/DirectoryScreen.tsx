@@ -113,7 +113,9 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                           {u.email && (
                             <a
-                              href={`mailto:${u.email}`}
+                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(u.email)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="flex items-center gap-1 text-xs text-brand-green-dark font-semibold hover:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
