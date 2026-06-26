@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Post, DocumentItem, CalendarEvent } from '../types';
-import { Mic, Megaphone, FileText, ChevronRight, Eye, Calendar, MapPin } from 'lucide-react';
+import { Mic, Megaphone, FileText, ChevronRight, Eye, Calendar, MapPin, Bell, Send } from 'lucide-react';
 
 interface HomeScreenProps {
   currentUser: User;
@@ -11,6 +11,8 @@ interface HomeScreenProps {
   onSetTab: (tab: string) => void;
   onViewDoc: (docId: string) => void;
   onLaunchRecord: () => void;
+  onAddPost: (post: Post) => Promise<void>;
+  onOpenNotif: () => void;
 }
 
 export default function HomeScreen({
@@ -22,8 +24,36 @@ export default function HomeScreen({
   onSetTab,
   onViewDoc,
   onLaunchRecord,
+  onAddPost,
+  onOpenNotif,
 }: HomeScreenProps) {
-  
+  const [quickPostText, setQuickPostText] = useState('');
+  const [isPostingQuick, setIsPostingQuick] = useState(false);
+
+  const handleQuickPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPostText.trim()) return;
+    setIsPostingQuick(true);
+    const newPost: Post = {
+      id: String(Date.now()),
+      author: currentUser.name,
+      initials: currentUser.initials || currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),
+      authorId: currentUser.id,
+      cat: 'Update',
+      text: quickPostText.trim(),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      attachment: null,
+    };
+    try {
+      await onAddPost(newPost);
+      setQuickPostText('');
+    } catch {
+      alert('Failed to post. Please check your connection and try again.');
+    } finally {
+      setIsPostingQuick(false);
+    }
+  };
+
   // Format current date nicely
   const getFormattedDate = () => {
     const now = new Date();
@@ -135,7 +165,15 @@ export default function HomeScreen({
       <div className="bg-brand-green px-5 pt-12 pb-7 text-center relative overflow-hidden flex-shrink-0 text-white">
         <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
         <div className="absolute -bottom-16 right-6 w-32 h-32 bg-white/5 rounded-full" />
-        
+
+        <button
+          onClick={onOpenNotif}
+          title="Notifications"
+          className="absolute top-12 right-5 w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer z-10"
+        >
+          <Bell className="w-4 h-4" />
+        </button>
+
         <div className="flex justify-center mb-3">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden relative">
             <img
@@ -325,6 +363,32 @@ export default function HomeScreen({
             })
           )}
         </div>
+      </div>
+
+      {/* Quick Post */}
+      <div className="px-5 mt-4">
+        <form onSubmit={handleQuickPost} className="bg-white rounded-xl border border-brand-border p-3 flex items-center gap-2.5">
+          <input
+            type="text"
+            value={quickPostText}
+            onChange={(e) => setQuickPostText(e.target.value)}
+            placeholder="Share an update with the team…"
+            className="flex-1 text-xs text-brand-text bg-transparent focus:outline-none placeholder:text-brand-text-light"
+          />
+          <button
+            type="submit"
+            disabled={isPostingQuick || !quickPostText.trim()}
+            className="w-8 h-8 rounded-lg bg-brand-green text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40 cursor-pointer"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </form>
+        <button
+          onClick={() => onSetTab('forum')}
+          className="text-xs font-medium text-brand-green-dark hover:underline mt-1.5 ml-1 cursor-pointer focus:outline-none"
+        >
+          Or post from the Community tab →
+        </button>
       </div>
 
       {/* Recent Team Posts */}

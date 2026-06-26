@@ -19,6 +19,9 @@ export interface User {
   notifAnnounce?: boolean;
   notifBdays?: boolean;
   notifStories?: boolean;
+  notifResources?: boolean;
+  notifEvents?: boolean;
+  notifTeam?: boolean;
 }
 
 export interface Story {
@@ -48,6 +51,9 @@ export interface CalendarEvent {
   category: 'Meeting' | 'Training' | 'Fundraiser' | 'Community' | 'Holiday' | 'Other';
   allDay?: boolean;
   createdBy?: string;
+  status?: 'approved' | 'pending';
+  submittedBy?: string;
+  submitterName?: string;
 }
 
 export interface Prompt {

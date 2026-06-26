@@ -359,7 +359,7 @@ export default function StoriesScreen({
               </div>
               <div className="text-left flex-1">
                 <h3 className="text-sm font-bold text-brand-text">Record New Story</h3>
-                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 4-step staff process</p>
+                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 5-step process</p>
               </div>
               <span className="text-xl text-brand-green-dark font-medium">&rsaquo;</span>
             </div>
@@ -413,27 +413,31 @@ export default function StoriesScreen({
                   <div className="bg-brand-cream border-t border-brand-border px-4 py-2.5 flex items-center justify-between text-[13px] text-brand-text-light font-medium">
                     <div className="flex flex-col gap-0.5">
                       <span>By: <span className="font-semibold text-brand-text">{s.author}</span></span>
-                      {s.waiverUrl ? (
-                        <a
-                          href={s.waiverUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ShieldCheck className="w-3 h-3" /> Waiver signed
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-brand-text-light italic">No waiver on file</span>
+                      {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
+                        s.waiverUrl ? (
+                          <a
+                            href={s.waiverUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ShieldCheck className="w-3 h-3" /> Waiver signed
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-brand-text-light italic">No waiver on file</span>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      {s.consentType === 'named' ? (
-                        <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Name May Be Used</span>
-                      ) : (
-                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Anonymous</span>
+                      {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
+                        s.consentType === 'named' ? (
+                          <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Name May Be Used</span>
+                        ) : (
+                          <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold text-[13px]">Anonymous</span>
+                        )
                       )}
-                      
+
                       {(currentUser.role === 'admin' || s.authorId === currentUser.id) && (
                         <div className="flex items-center gap-1.5 ml-2">
                           <button

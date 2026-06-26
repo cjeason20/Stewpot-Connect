@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { CalendarEvent } from '../types';
-import { ChevronLeft, ChevronRight, MapPin, Clock, Calendar } from 'lucide-react';
+import { CalendarEvent, User } from '../types';
+import { ChevronLeft, ChevronRight, MapPin, Clock, Calendar, Plus, X } from 'lucide-react';
 
 interface CalendarScreenProps {
   events: CalendarEvent[];
+  currentUser: User;
+  onSubmitEventRequest: (event: CalendarEvent) => Promise<void>;
 }
 
 const CATEGORY_STYLES: Record<CalendarEvent['category'], { pill: string; dot: string; emoji: string }> = {
@@ -28,13 +30,63 @@ function parseLocalDate(dateStr: string) {
   return new Date(y, mo - 1, d);
 }
 
-export default function CalendarScreen({ events }: CalendarScreenProps) {
+export default function CalendarScreen({ events, currentUser, onSubmitEventRequest }: CalendarScreenProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const visibleEvents = events.filter((e) => e.status !== 'pending');
+
+  // Add Event request modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newCategory, setNewCategory] = useState<CalendarEvent['category']>('Other');
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
+  const resetAddForm = () => {
+    setNewTitle(''); setNewDate(''); setNewTime(''); setNewEndTime('');
+    setNewLocation(''); setNewDescription(''); setNewCategory('Other');
+  };
+
+  const handleSubmitEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newDate) {
+      alert('Please provide at least a title and date.');
+      return;
+    }
+    setIsSubmittingEvent(true);
+    const event: CalendarEvent = {
+      id: String(Date.now()),
+      title: newTitle.trim(),
+      date: newDate,
+      ...(newTime ? { time: newTime } : {}),
+      ...(newEndTime ? { endTime: newEndTime } : {}),
+      ...(newLocation.trim() ? { location: newLocation.trim() } : {}),
+      ...(newDescription.trim() ? { description: newDescription.trim() } : {}),
+      category: newCategory,
+      status: 'pending',
+      submittedBy: currentUser.id,
+      submitterName: currentUser.name,
+    };
+    try {
+      await onSubmitEventRequest(event);
+      resetAddForm();
+      setShowAddModal(false);
+      alert('Your event submission is under review by an admin.');
+    } catch {
+      alert('Failed to submit event. Please try again.');
+    } finally {
+      setIsSubmittingEvent(false);
+    }
+  };
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -60,7 +112,7 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
   while (cells.length % 7 !== 0) cells.push(null);
 
   // Map events by date string
-  const eventsByDate = events.reduce<Record<string, CalendarEvent[]>>((acc, e) => {
+  const eventsByDate = visibleEvents.reduce<Record<string, CalendarEvent[]>>((acc, e) => {
     if (!acc[e.date]) acc[e.date] = [];
     acc[e.date].push(e);
     return acc;
@@ -78,7 +130,7 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
   // Events to show in the list below
   const listEvents: CalendarEvent[] = selectedDate
     ? (eventsByDate[selectedDate] || []).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-    : events
+    : visibleEvents
         .filter(e => e.date >= today.toISOString().slice(0, 10))
         .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
         .slice(0, 20);
@@ -91,9 +143,17 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
     <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar pb-24 text-left">
 
       {/* Header */}
-      <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0">
-        <h1 className="font-poppins font-bold text-2xl">Calendar</h1>
-        <p className="text-xs text-[#E8F5E9]/90 mt-1">Stewpot events &amp; important dates</p>
+      <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0 flex items-start justify-between">
+        <div>
+          <h1 className="font-poppins font-bold text-2xl">Calendar</h1>
+          <p className="text-xs text-[#E8F5E9]/90 mt-1">Stewpot events &amp; important dates</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-1 text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl cursor-pointer transition-all flex-shrink-0 mt-1"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add Event
+        </button>
       </div>
 
       {/* Month navigator */}
@@ -214,6 +274,106 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
           )}
         </div>
       </div>
+
+      {/* Add Event Request Modal */}
+      {showAddModal && (
+        <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 z-40">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm text-brand-text shadow-2xl relative mb-0 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-3 border-b border-brand-border mb-4">
+              <h3 className="text-sm font-bold font-poppins text-brand-text">Request an Event</h3>
+              <X className="w-5 h-5 text-brand-text-light cursor-pointer" onClick={() => setShowAddModal(false)} />
+            </div>
+
+            <form onSubmit={handleSubmitEvent} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-brand-text-light mb-1">Title</label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1">Category</label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value as CalendarEvent['category'])}
+                    className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                  >
+                    {(['Meeting','Training','Fundraiser','Community','Holiday','Other'] as const).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-brand-text-light mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-brand-text-light mb-1">Location</label>
+                <input
+                  type="text"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-brand-text-light mb-1">Description</label>
+                <textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingEvent}
+                className="w-full py-3 bg-brand-green text-white font-bold rounded-xl text-xs mt-2 disabled:opacity-60"
+              >
+                {isSubmittingEvent ? 'Submitting…' : 'Submit for Approval'}
+              </button>
+              <p className="text-[11px] text-brand-text-light text-center">An admin will review your event submission.</p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

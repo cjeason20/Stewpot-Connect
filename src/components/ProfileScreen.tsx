@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { User, Story, DocumentItem } from '../types';
-import { Camera, Bell, Lock, LogOut, FileText, Mic, Users, X, ChevronRight, Move } from 'lucide-react';
+import { Camera, Bell, Lock, LogOut, FileText, Users, X, ChevronRight, Move } from 'lucide-react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 import { syncToDrive } from '../lib/driveSync';
@@ -14,6 +14,8 @@ interface ProfileScreenProps {
   onUpdateProfile: (updated: User) => void;
   onSignOut: () => void;
   onLaunchAdminPanel: (tab: 'users' | 'docs') => void;
+  openNotifSignal?: boolean;
+  onOpenNotifHandled?: () => void;
 }
 
 export default function ProfileScreen({
@@ -25,11 +27,35 @@ export default function ProfileScreen({
   onUpdateProfile,
   onSignOut,
   onLaunchAdminPanel,
+  openNotifSignal,
+  onOpenNotifHandled,
 }: ProfileScreenProps) {
   const [name, setName] = useState(currentUser.name || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [title, setTitle] = useState(currentUser.title || '');
   const [dept, setDept] = useState(currentUser.dept || '');
+
+  const months = [
+    { val: '01', label: 'January' }, { val: '02', label: 'February' },
+    { val: '03', label: 'March' },   { val: '04', label: 'April' },
+    { val: '05', label: 'May' },     { val: '06', label: 'June' },
+    { val: '07', label: 'July' },    { val: '08', label: 'August' },
+    { val: '09', label: 'September'},{ val: '10', label: 'October' },
+    { val: '11', label: 'November' },{ val: '12', label: 'December' },
+  ];
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+
+  const parseBday = (bday?: string): { mon: string; day: string } => {
+    if (!bday) return { mon: '', day: '' };
+    const parts = bday.split('-');
+    if (parts.length === 3) return { mon: parts[1], day: parts[2] };
+    if (parts.length === 2) return { mon: parts[0], day: parts[1] };
+    return { mon: '', day: '' };
+  };
+
+  const initialBday = parseBday(currentUser.bday);
+  const [bdayMon, setBdayMon] = useState(initialBday.mon);
+  const [bdayDay, setBdayDay] = useState(initialBday.day);
 
   // Photo crop modal
   const [cropModal, setCropModal] = useState<{ objectUrl: string; file: File; posX: number; posY: number } | null>(null);
@@ -46,10 +72,19 @@ export default function ProfileScreen({
   const [notifPosts, setNotifPosts] = useState(currentUser.notifPosts ?? true);
   const [notifAnnounce, setNotifAnnounce] = useState(currentUser.notifAnnounce ?? true);
   const [notifBdays, setNotifBdays] = useState(currentUser.notifBdays ?? true);
+  const [notifResources, setNotifResources] = useState(currentUser.notifResources ?? true);
+  const [notifEvents, setNotifEvents] = useState(currentUser.notifEvents ?? true);
   const [notifStories, setNotifStories] = useState(currentUser.notifStories ?? false);
+  const [notifTeam, setNotifTeam] = useState(currentUser.notifTeam ?? true);
+
+  React.useEffect(() => {
+    if (openNotifSignal) {
+      setActiveModal('notif');
+      onOpenNotifHandled?.();
+    }
+  }, [openNotifSignal]);
 
   const isAdmin = currentUser.role === 'admin';
-  const myStoriesCount = stories.filter((s) => s.authorId === currentUser.id || s.author === currentUser.name).length;
 
   const jobTitles = [
     'Director', 'Assistant Director', 'Executive Director', 'Chief Operating Officer',
@@ -79,6 +114,7 @@ export default function ProfileScreen({
       email: email.trim().toLowerCase(),
       title,
       dept,
+      bday: bdayMon && bdayDay ? `${bdayMon}-${bdayDay}` : '',
       initials: name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),
     };
 
@@ -199,7 +235,10 @@ export default function ProfileScreen({
       notifPosts,
       notifAnnounce,
       notifBdays,
+      notifResources,
+      notifEvents,
       notifStories,
+      notifTeam,
     };
     onUpdateProfile(updatedUser);
     setActiveModal('none');
@@ -307,6 +346,38 @@ export default function ProfileScreen({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1 pl-1">Birthday (Month &amp; Day)</label>
+              <div className="grid grid-cols-2 gap-1">
+                <select
+                  value={bdayMon}
+                  onChange={(e) => setBdayMon(e.target.value)}
+                  className="w-full px-1.5 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                >
+                  <option value="">Mo.</option>
+                  {months.map(m => <option key={m.val} value={m.val}>{m.label.slice(0,3)}</option>)}
+                </select>
+                <select
+                  value={bdayDay}
+                  onChange={(e) => setBdayDay(e.target.value)}
+                  className="w-full px-1.5 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text"
+                >
+                  <option value="">Day</option>
+                  {days.map(d => <option key={d} value={d}>{parseInt(d)}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-text-light mb-1 pl-1">Work Anniversary</label>
+              <div className="w-full px-3 py-2 bg-brand-cream border border-brand-border rounded-lg text-xs text-brand-text-mid">
+                {currentUser.anniv || 'Not set'}
+              </div>
+              <p className="text-[11px] text-brand-text-light mt-0.5 pl-1">Set by admins only</p>
+            </div>
+          </div>
+
           <button
             type="submit"
             className="w-full py-2.5 bg-brand-green text-white font-bold rounded-xl text-xs hover:bg-brand-green-dark shadow-sm active:scale-[0.99] transition-all"
@@ -314,30 +385,6 @@ export default function ProfileScreen({
             Update Profile
           </button>
         </form>
-      </div>
-
-      {/* Stats Block */}
-      <div className="px-5 mt-6">
-        <div className="text-[13px] font-bold text-brand-text-light uppercase tracking-wider mb-2.5 pl-1">
-          📊 My Agency Activity Overview
-        </div>
-        <div className="bg-white rounded-xl border border-brand-border p-4 grid grid-cols-3 gap-4 text-center divide-x divide-brand-border">
-          <div>
-            <div className="flex justify-center mb-1 text-brand-green"><Mic className="w-4 h-4" /></div>
-            <div className="text-sm font-bold text-brand-text">{myStoriesCount}</div>
-            <div className="text-[13px] font-semibold text-brand-text-light uppercase mt-0.5">Vocal Stories</div>
-          </div>
-          <div>
-            <div className="flex justify-center mb-1 text-brand-green"><Users className="w-4 h-4" /></div>
-            <div className="text-sm font-bold text-brand-text">{users.length}</div>
-            <div className="text-[13px] font-semibold text-brand-text-light uppercase mt-0.5">Staff Users</div>
-          </div>
-          <div>
-            <div className="flex justify-center mb-1 text-brand-green"><FileText className="w-4 h-4" /></div>
-            <div className="text-sm font-bold text-brand-text">{docs.length}</div>
-            <div className="text-[13px] font-semibold text-brand-text-light uppercase mt-0.5">Admin Files</div>
-          </div>
-        </div>
       </div>
 
       {/* Admin Quick Shortcuts */}
@@ -381,23 +428,23 @@ export default function ProfileScreen({
             onClick={() => setActiveModal('notif')}
             className="p-3.5 flex justify-between items-center text-xs font-semibold text-brand-text hover:bg-brand-green-light/45 cursor-pointer"
           >
-            <div className="flex items-center gap-2.5"><Bell className="w-4 h-4 text-brand-text-mid" /> Alert Preferences</div>
+            <div className="flex items-center gap-2.5"><Bell className="w-4 h-4 text-brand-text-mid" /> Notifications</div>
             <ChevronRight className="w-4 h-4 text-brand-text-light" />
           </div>
 
-          <div 
+          <div
             onClick={() => setActiveModal('privacy')}
             className="p-3.5 flex justify-between items-center text-xs font-semibold text-brand-text hover:bg-brand-green-light/45 cursor-pointer"
           >
-            <div className="flex items-center gap-2.5"><Lock className="w-4 h-4 text-brand-text-mid" /> Update Security Credentials</div>
+            <div className="flex items-center gap-2.5"><Lock className="w-4 h-4 text-brand-text-mid" /> Change Password</div>
             <ChevronRight className="w-4 h-4 text-brand-text-light" />
           </div>
 
-          <div 
+          <div
             onClick={onSignOut}
             className="p-3.5 flex justify-between items-center text-xs font-bold text-red-600 hover:bg-red-50 cursor-pointer"
           >
-            <div className="flex items-center gap-2.5"><LogOut className="w-4 h-4 text-red-500" /> Sign Out Agency Vault</div>
+            <div className="flex items-center gap-2.5"><LogOut className="w-4 h-4 text-red-500" /> Sign Out</div>
             <ChevronRight className="w-4 h-4 text-red-300" />
           </div>
         </div>
@@ -408,60 +455,73 @@ export default function ProfileScreen({
         <div className="absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 z-40">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm text-brand-text shadow-2xl relative mb-0">
             <div className="flex justify-between items-center pb-3 border-b border-brand-border mb-4">
-              <h3 className="text-sm font-bold font-poppins text-brand-text">Notification Alerts</h3>
+              <h3 className="text-sm font-bold font-poppins text-brand-text">Notifications</h3>
               <X className="w-5 h-5 text-brand-text-light cursor-pointer" onClick={() => setActiveModal('none')} />
             </div>
 
             <div className="space-y-4">
               <label className="flex justify-between items-center cursor-pointer">
                 <div>
-                  <span className="block text-xs font-bold text-brand-text">Team Kudos &amp; Discussion</span>
-                  <span className="block text-xs text-brand-text-light">Notify when members post updates</span>
+                  <span className="block text-xs font-bold text-brand-text">Announcements &amp; Posts</span>
+                  <span className="block text-xs text-brand-text-light">When announcements or community posts are made</span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  checked={notifPosts}
-                  onChange={(e) => setNotifPosts(e.target.checked)}
-                  className="w-5 h-5 accent-brand-green" 
+                <input
+                  type="checkbox"
+                  checked={notifAnnounce && notifPosts}
+                  onChange={(e) => { setNotifAnnounce(e.target.checked); setNotifPosts(e.target.checked); }}
+                  className="w-5 h-5 accent-brand-green"
                 />
               </label>
 
               <label className="flex justify-between items-center cursor-pointer">
                 <div>
-                  <span className="block text-xs font-bold text-brand-text">Important Announcements</span>
-                  <span className="block text-xs text-brand-text-light">Direct shelter and program operational warnings</span>
+                  <span className="block text-xs font-bold text-brand-text">Resources Uploaded</span>
+                  <span className="block text-xs text-brand-text-light">When new resources are uploaded</span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  checked={notifAnnounce}
-                  onChange={(e) => setNotifAnnounce(e.target.checked)}
-                  className="w-5 h-5 accent-brand-green" 
+                <input
+                  type="checkbox"
+                  checked={notifResources}
+                  onChange={(e) => setNotifResources(e.target.checked)}
+                  className="w-5 h-5 accent-brand-green"
                 />
               </label>
 
               <label className="flex justify-between items-center cursor-pointer">
                 <div>
-                  <span className="block text-xs font-bold text-brand-text">Staff Birthdays &amp; Milestones</span>
-                  <span className="block text-xs text-brand-text-light">Keep updated with team anniversaries</span>
+                  <span className="block text-xs font-bold text-brand-text">Events</span>
+                  <span className="block text-xs text-brand-text-light">When events are approaching or added</span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  checked={notifBdays}
-                  onChange={(e) => setNotifBdays(e.target.checked)}
-                  className="w-5 h-5 accent-brand-green" 
+                <input
+                  type="checkbox"
+                  checked={notifEvents}
+                  onChange={(e) => setNotifEvents(e.target.checked)}
+                  className="w-5 h-5 accent-brand-green"
                 />
               </label>
 
               <label className="flex justify-between items-center cursor-pointer">
                 <div>
-                  <span className="block text-xs font-bold text-brand-text">Secure Audio Transcription Alerts</span>
-                  <span className="block text-xs text-brand-text-light">Transcribing vocal story completion alerts</span>
+                  <span className="block text-xs font-bold text-brand-text">New Stories</span>
+                  <span className="block text-xs text-brand-text-light">When a new story has been uploaded</span>
                 </div>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={notifStories}
                   onChange={(e) => setNotifStories(e.target.checked)}
-                  className="w-5 h-5 accent-brand-green" 
+                  className="w-5 h-5 accent-brand-green"
+                />
+              </label>
+
+              <label className="flex justify-between items-center cursor-pointer">
+                <div>
+                  <span className="block text-xs font-bold text-brand-text">New Team Members</span>
+                  <span className="block text-xs text-brand-text-light">When a new team member has been added</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifTeam}
+                  onChange={(e) => setNotifTeam(e.target.checked)}
+                  className="w-5 h-5 accent-brand-green"
                 />
               </label>
 

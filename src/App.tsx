@@ -29,6 +29,8 @@ export default function App() {
   // 'login' | 'home' | 'stories' | 'forum' | 'resources' | 'profile' | 'admin'
   const [activeTab, setActiveTab] = useState<string>('login');
   const [adminTabFocus, setAdminTabFocus] = useState<'users' | 'docs'>('users');
+  const [openNotifSignal, setOpenNotifSignal] = useState(false);
+  const handleOpenNotif = () => { setActiveTab('profile'); setOpenNotifSignal(true); };
 
   // Load and subscribe to Live Firestore updates
   const [isAuthed, setIsAuthed] = useState<boolean>(false);
@@ -528,7 +530,7 @@ export default function App() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-all cursor-pointer" title="Notifications">
+                    <button onClick={handleOpenNotif} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-all cursor-pointer" title="Notifications">
                       <Bell className="w-4 h-4" />
                     </button>
                     <div
@@ -550,7 +552,8 @@ export default function App() {
                   <div className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden min-h-[calc(100vh-7rem)]">
                     {activeTab === 'home' && (
                       <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs} events={events}
-                        onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
+                        onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')}
+                        onAddPost={handleAddPost} onOpenNotif={handleOpenNotif} />
                     )}
                     {activeTab === 'stories' && (
                       <StoriesScreen currentUser={currentUser} stories={stories} prompts={prompts} onAddStory={handleAddStory} onUpdateStory={handleUpdateStory} onDeleteStory={handleDeleteStory} />
@@ -562,14 +565,15 @@ export default function App() {
                       <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
                     )}
                     {activeTab === 'calendar' && (
-                      <CalendarScreen events={events} />
+                      <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
                     )}
                     {activeTab === 'directory' && (
                       <DirectoryScreen currentUser={currentUser} users={users} />
                     )}
                     {activeTab === 'profile' && (
                       <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
-                        onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
+                        onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel}
+                        openNotifSignal={openNotifSignal} onOpenNotifHandled={() => setOpenNotifSignal(false)} />
                     )}
                     {activeTab === 'admin' && currentUser.role === 'admin' && (
                       <AdminScreen currentUser={currentUser} users={users} docs={docs}
@@ -609,7 +613,8 @@ export default function App() {
               <>
                 {activeTab === 'home' && (
                   <HomeScreen currentUser={currentUser} users={users} posts={posts} docs={docs} events={events}
-                    onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')} />
+                    onSetTab={setActiveTab} onViewDoc={() => setActiveTab('resources')} onLaunchRecord={() => setActiveTab('stories')}
+                    onAddPost={handleAddPost} onOpenNotif={handleOpenNotif} />
                 )}
                 {activeTab === 'stories' && (
                   <StoriesScreen currentUser={currentUser} stories={stories} prompts={prompts}
@@ -623,14 +628,15 @@ export default function App() {
                   <ResourcesScreen currentUser={currentUser} docs={docs} onDeleteDoc={handleDeleteDoc} />
                 )}
                 {activeTab === 'calendar' && (
-                  <CalendarScreen events={events} />
+                  <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
                 )}
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
                 )}
                 {activeTab === 'profile' && (
                   <ProfileScreen currentUser={currentUser} users={users} stories={stories} docs={docs}
-                    onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel} />
+                    onSetTab={setActiveTab} onUpdateProfile={handleUpdateUser} onSignOut={doSignOut} onLaunchAdminPanel={handleLaunchAdminPanel}
+                    openNotifSignal={openNotifSignal} onOpenNotifHandled={() => setOpenNotifSignal(false)} />
                 )}
                 {activeTab === 'admin' && currentUser.role === 'admin' && (
                   <AdminScreen currentUser={currentUser} users={users} docs={docs}
@@ -791,6 +797,8 @@ export default function App() {
                     onSetTab={setActiveTab}
                     onViewDoc={(id) => { setActiveTab('resources'); }}
                     onLaunchRecord={() => { setActiveTab('stories'); }}
+                    onAddPost={handleAddPost}
+                    onOpenNotif={handleOpenNotif}
                   />
                 )}
 
@@ -824,7 +832,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'calendar' && (
-                  <CalendarScreen events={events} />
+                  <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
                 )}
 
                 {activeTab === 'directory' && (
@@ -841,6 +849,8 @@ export default function App() {
                     onUpdateProfile={handleUpdateUser}
                     onSignOut={doSignOut}
                     onLaunchAdminPanel={handleLaunchAdminPanel}
+                    openNotifSignal={openNotifSignal}
+                    onOpenNotifHandled={() => setOpenNotifSignal(false)}
                   />
                 )}
 
