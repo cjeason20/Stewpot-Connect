@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { User, Post, DocumentItem, Story, Prompt, CalendarEvent, UserRole, PostCategory } from './types';
+import { User, Post, DocumentItem, Story, Prompt, CalendarEvent, Photo, UserRole, PostCategory } from './types';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import StoriesScreen from './components/StoriesScreen';
@@ -9,8 +9,9 @@ import ProfileScreen from './components/ProfileScreen';
 import AdminScreen from './components/AdminScreen';
 import DirectoryScreen from './components/DirectoryScreen';
 import CalendarScreen from './components/CalendarScreen';
+import PhotosScreen from './components/PhotosScreen';
 
-import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays } from 'lucide-react';
+import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays, Camera } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
@@ -24,6 +25,7 @@ export default function App() {
   const [stories, setStories] = useState<Story[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   
   // Navigation states
   // 'login' | 'home' | 'stories' | 'forum' | 'resources' | 'profile' | 'admin'
@@ -208,7 +210,18 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'events');
     });
 
-    // 6. Snapshot listener for PROMPTS
+    // 6. Snapshot listener for PHOTOS
+    const unsubPhotos = onSnapshot(collection(db, 'photos'), (snapshot) => {
+      const list: Photo[] = [];
+      snapshot.forEach(docSnap => {
+        list.push({ ...docSnap.data(), id: docSnap.id } as Photo);
+      });
+      setPhotos(list);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'photos');
+    });
+
+    // 7. Snapshot listener for PROMPTS
     const unsubPrompts = onSnapshot(collection(db, 'prompts'), (snapshot) => {
       const pList: Prompt[] = [];
       snapshot.forEach(docSnap => {
@@ -228,6 +241,7 @@ export default function App() {
       unsubDocs();
       unsubStories();
       unsubEvents();
+      unsubPhotos();
       unsubPrompts();
     };
   }, []);
@@ -352,6 +366,22 @@ export default function App() {
     }
   };
 
+  const handleAddPhoto = async (photo: Photo) => {
+    try {
+      await setDoc(doc(db, 'photos', photo.id), photo);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, `photos/${photo.id}`);
+    }
+  };
+
+  const handleDeletePhoto = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'photos', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `photos/${id}`);
+    }
+  };
+
   const handleAddPrompt = async (p: Prompt) => {
     try {
       await setDoc(doc(db, 'prompts', p.id), p);
@@ -446,6 +476,7 @@ export default function App() {
                 { id: 'forum',     label: 'Community',   Icon: MessageSquare,desc: 'Team posts & announcements' },
                 { id: 'resources',  label: 'Resources',  Icon: BookOpen,     desc: 'Documents & files' },
                 { id: 'calendar',  label: 'Calendar',   Icon: CalendarDays, desc: 'Events & schedule' },
+                { id: 'photos',    label: 'Photos',     Icon: Camera,       desc: 'Stewpot photo gallery' },
                 { id: 'directory', label: 'Directory',  Icon: Users,        desc: 'Staff contact info' },
                 { id: 'profile',   label: 'My Profile', Icon: UserIcon,     desc: 'Settings & account' },
                 ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield, desc: 'Users, docs & controls' }] : [])
@@ -521,6 +552,7 @@ export default function App() {
                       {activeTab === 'forum'     && 'Community'}
                       {activeTab === 'resources'  && 'Resources'}
                       {activeTab === 'calendar'  && 'Calendar'}
+                      {activeTab === 'photos'    && 'Photos'}
                       {activeTab === 'directory' && 'Staff Directory'}
                       {activeTab === 'profile'   && 'My Profile'}
                       {activeTab === 'admin'     && 'Admin Panel'}
@@ -566,6 +598,9 @@ export default function App() {
                     )}
                     {activeTab === 'calendar' && (
                       <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
+                    )}
+                    {activeTab === 'photos' && (
+                      <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
                     )}
                     {activeTab === 'directory' && (
                       <DirectoryScreen currentUser={currentUser} users={users} />
@@ -629,6 +664,9 @@ export default function App() {
                 )}
                 {activeTab === 'calendar' && (
                   <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
+                )}
+                {activeTab === 'photos' && (
+                  <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
                 )}
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
@@ -835,6 +873,10 @@ export default function App() {
                   <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
                 )}
 
+                {activeTab === 'photos' && (
+                  <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
+                )}
+
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
                 )}
@@ -918,6 +960,15 @@ export default function App() {
                 <BookOpen className={`w-5.5 h-5.5 ${activeTab === 'resources' ? 'text-brand-green' : 'text-brand-text-light'}`} />
                 Resources
                 {activeTab === 'resources' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('photos')}
+                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'photos' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
+              >
+                <Camera className={`w-5.5 h-5.5 ${activeTab === 'photos' ? 'text-brand-green' : 'text-brand-text-light'}`} />
+                Photos
+                {activeTab === 'photos' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
               </button>
 
               <button

@@ -84,6 +84,15 @@ export interface Post {
   date: string;
 }
 
+export interface Photo {
+  id: string;
+  url: string;
+  caption?: string;
+  uploadedBy: string;
+  uploadedById: string;
+  date: string; // ISO string
+}
+
 export interface DocumentItem {
   id: string;
   name: string;
