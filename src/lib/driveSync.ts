@@ -28,11 +28,13 @@ export async function syncToDrive(
   fileUrl: string,
   fileName: string,
   folder: DriveFolder,
+  subfolder?: string,
 ): Promise<void> {
   if (!SYNC_URL) return;
   try {
-    // URLSearchParams + no-cors = simple POST, no preflight needed
-    const body = new URLSearchParams({ fileUrl, fileName, folder });
+    const params: Record<string, string> = { fileUrl, fileName, folder };
+    if (subfolder) params.subfolder = subfolder;
+    const body = new URLSearchParams(params);
     await fetch(SYNC_URL, { method: 'POST', mode: 'no-cors', body });
   } catch (err) {
     console.warn('[DriveSync] non-blocking error:', err);

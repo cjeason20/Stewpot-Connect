@@ -88,6 +88,7 @@ export interface Photo {
   id: string;
   url: string;
   caption?: string;
+  program?: string;
   uploadedBy: string;
   uploadedById: string;
   date: string; // ISO string

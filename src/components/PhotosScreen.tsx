@@ -13,8 +13,17 @@ interface PhotosScreenProps {
 }
 
 export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDeletePhoto }: PhotosScreenProps) {
+  const programsList = [
+    'Afterschool Program', 'Billy Brumfield Shelter', 'Case Management',
+    'Clothing Closet', 'Community Kitchen', 'Food Pantry', 'HeARTWorks',
+    'Housing Assistance', 'Legal Clinic', "Matt's House", 'Meals on Wheels',
+    'Opportunity Center', 'Special Events & Communications', 'Street Outreach',
+    'Summer Camp', 'Transitional Shelter',
+  ];
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [caption, setCaption] = useState('');
+  const [program, setProgram] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,12 +72,13 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
 
       await uploadBytes(ref, blob, { contentType: 'image/jpeg' });
       const url = await getDownloadURL(ref);
-      syncToDrive(url, fileName, 'community-photos');
+      syncToDrive(url, fileName, 'community-photos', program || undefined);
 
       await onAddPhoto({
         id: fileName,
         url,
         caption: caption.trim(),
+        program: program || undefined,
         uploadedBy: currentUser.name,
         uploadedById: currentUser.id,
         date: new Date().toISOString(),
@@ -76,6 +86,7 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
 
       setShowUploadModal(false);
       setCaption('');
+      setProgram('');
       setPreviewUrl(null);
       setSelectedFile(null);
     } catch (err: any) {
@@ -148,6 +159,9 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
                   {photo.caption && (
                     <p className="text-xs font-semibold text-brand-text leading-tight">{photo.caption}</p>
                   )}
+                  {photo.program && (
+                    <p className="text-[10px] font-semibold text-brand-green-dark bg-brand-green-light px-1.5 py-0.5 rounded-full inline-block mt-1">{photo.program}</p>
+                  )}
                   <p className="text-[10px] text-brand-text-light mt-0.5">{photo.uploadedBy}</p>
                 </div>
                 {canDelete(photo) && (
@@ -200,6 +214,18 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
               onChange={handleFileChange}
             />
 
+            {/* Program */}
+            <select
+              value={program}
+              onChange={(e) => setProgram(e.target.value)}
+              className="w-full border border-brand-border rounded-xl px-4 py-2.5 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-green mb-3 bg-white"
+            >
+              <option value="">Select a program (optional)</option>
+              {programsList.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+
             {/* Caption */}
             <input
               type="text"
@@ -234,6 +260,9 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
             <div>
               {lightboxPhoto.caption && (
                 <p className="text-sm font-semibold text-white">{lightboxPhoto.caption}</p>
+              )}
+              {lightboxPhoto.program && (
+                <p className="text-[10px] font-semibold text-brand-green-dark bg-brand-green-light px-1.5 py-0.5 rounded-full inline-block mb-0.5">{lightboxPhoto.program}</p>
               )}
               <p className="text-xs text-zinc-400">{lightboxPhoto.uploadedBy} · {new Date(lightboxPhoto.date).toLocaleDateString()}</p>
             </div>

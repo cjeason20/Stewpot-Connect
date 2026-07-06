@@ -39,9 +39,10 @@ var FOLDER_NAMES = {
 
 function doPost(e) {
   try {
-    var fileUrl  = e.parameter.fileUrl;
-    var fileName = e.parameter.fileName || ('upload_' + Date.now());
+    var fileUrl   = e.parameter.fileUrl;
+    var fileName  = e.parameter.fileName || ('upload_' + Date.now());
     var folderKey = e.parameter.folder;
+    var subfolder = e.parameter.subfolder || '';
 
     if (!fileUrl || !folderKey) {
       throw new Error('Missing or invalid parameters. folder=' + folderKey);
@@ -53,7 +54,7 @@ function doPost(e) {
     }
 
     var blob = response.getBlob().setName(fileName);
-    var driveFolder = getOrCreateFolder(folderKey);
+    var driveFolder = getOrCreateFolder(folderKey, subfolder);
     driveFolder.createFile(blob);
 
     return ContentService
@@ -67,13 +68,24 @@ function doPost(e) {
   }
 }
 
-function getOrCreateFolder(folderKey) {
+// If subfolder is provided, files go into:
+//   Stewpot Connect Uploads / <folder> / <subfolder>
+// Otherwise they go into:
+//   Stewpot Connect Uploads / <folder>
+function getOrCreateFolder(folderKey, subfolder) {
   var rootFolders = DriveApp.getFoldersByName(ROOT_FOLDER_NAME);
   var root = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder(ROOT_FOLDER_NAME);
 
   var subName = FOLDER_NAMES[folderKey] || folderKey;
   var subFolders = root.getFoldersByName(subName);
-  return subFolders.hasNext() ? subFolders.next() : root.createFolder(subName);
+  var folder = subFolders.hasNext() ? subFolders.next() : root.createFolder(subName);
+
+  if (subfolder) {
+    var programFolders = folder.getFoldersByName(subfolder);
+    folder = programFolders.hasNext() ? programFolders.next() : folder.createFolder(subfolder);
+  }
+
+  return folder;
 }
 
 // Health-check — visit the web-app URL in a browser to confirm it's live.
