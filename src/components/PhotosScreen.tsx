@@ -79,8 +79,14 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
       setPreviewUrl(null);
       setSelectedFile(null);
     } catch (err: any) {
-      const msg = err?.code || err?.message || JSON.stringify(err) || 'unknown error';
-      alert(`Upload failed: ${msg}`);
+      let msg = err?.code || 'unknown';
+      try {
+        const parsed = JSON.parse(err?.message || '{}');
+        msg = parsed.error || parsed.authInfo ? JSON.stringify(parsed) : err?.message;
+      } catch {
+        msg = err?.message || String(err);
+      }
+      alert(`Upload failed:\n${msg}`);
       console.error('Photo upload error:', err);
     } finally {
       setIsUploading(false);
