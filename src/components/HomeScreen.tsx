@@ -65,11 +65,8 @@ export default function HomeScreen({
     return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
   };
 
-  // Extract up to 3 announcements
-  const announcements = posts.filter((p) => p.cat === 'Announcement').slice(0, 3);
-
-  // Recent posts across all categories (up to 5, excluding announcements already shown)
-  const recentPosts = posts.filter((p) => p.cat !== 'Announcement').slice(0, 5);
+  // All recent posts across every category, newest first
+  const recentPosts = posts.slice(0, 6);
 
   const getCatStyle = (cat: string) => {
     switch (cat) {
@@ -314,57 +311,6 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Announcements */}
-      <div className="px-5 mt-6">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-bold text-brand-text flex items-center gap-1.5">&#x1F4E2; Announcements</h2>
-          <button 
-            onClick={() => onSetTab('forum')}
-            className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"
-          >
-            See all
-          </button>
-        </div>
-        
-        <div className="space-y-3">
-          {announcements.length === 0 ? (
-            <div className="bg-white rounded-xl border border-brand-border p-4 text-center text-xs text-brand-text-light italic">
-              No recent announcements. Let's make sure everyone's updated!
-            </div>
-          ) : (
-            announcements.map((p) => {
-              const hasPhoto = p.attachment?.kind === 'photo' && p.attachment.data;
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => onSetTab('forum')}
-                  className="bg-white rounded-xl border border-brand-border overflow-hidden hover:border-brand-green/30 transition-all cursor-pointer text-left"
-                >
-                  {hasPhoto && (
-                    <img
-                      src={p.attachment!.data}
-                      alt="Post photo"
-                      className="w-full h-36 object-cover"
-                    />
-                  )}
-                  <div className="p-3.5">
-                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full mb-2">
-                      <Megaphone className="w-3 h-3" /> Announcement
-                    </div>
-                    <h3 className="text-xs font-semibold text-brand-text line-clamp-2 leading-relaxed">
-                      {p.text}
-                    </h3>
-                    <div className="text-xs text-brand-text-light mt-2.5 font-medium">
-                      {p.author} &middot; {p.date}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
       {/* Quick Post */}
       <div className="px-5 mt-4">
         <form onSubmit={handleQuickPost} className="bg-white rounded-xl border border-brand-border p-3 flex items-center gap-2.5">
@@ -410,6 +356,7 @@ export default function HomeScreen({
             </div>
           ) : (
             recentPosts.map((p) => {
+              const isAnnouncement = p.cat === 'Announcement';
               const { pill, emoji } = getCatStyle(p.cat);
               const hasPhoto = p.attachment?.kind === 'photo' && p.attachment.data;
               return (
@@ -427,9 +374,15 @@ export default function HomeScreen({
                   )}
                   <div className="p-3.5">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
-                        {emoji} {p.cat}
-                      </span>
+                      {isAnnouncement ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full">
+                          <Megaphone className="w-3 h-3" /> Announcement
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${pill}`}>
+                          {emoji} {p.cat}
+                        </span>
+                      )}
                       <span className="text-xs text-brand-text-light font-medium ml-auto">{p.date}</span>
                     </div>
                     {p.text && (
