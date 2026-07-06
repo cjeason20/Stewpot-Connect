@@ -10,6 +10,7 @@ import AdminScreen from './components/AdminScreen';
 import DirectoryScreen from './components/DirectoryScreen';
 import CalendarScreen from './components/CalendarScreen';
 import PhotosScreen from './components/PhotosScreen';
+import InstallPrompt from './components/InstallPrompt';
 
 import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays, Camera } from 'lucide-react';
 
@@ -999,6 +1000,9 @@ export default function App() {
       </div>
       )}
       {/* end !isStandalone mobile browser layout */}
+
+      {/* PWA install prompt — shown only to logged-in users on mobile browsers */}
+      {currentUser && <InstallPrompt />}
 
     </div>
   );
