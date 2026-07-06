@@ -40,19 +40,25 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
       // Compress to JPEG if it's an image
       let blob: Blob = selectedFile;
       if (selectedFile.type.startsWith('image/')) {
-        blob = await new Promise<Blob>((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX = 1600;
-            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.85);
-          };
-          img.src = previewUrl!;
-        });
+        try {
+          blob = await new Promise<Blob>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX = 1600;
+              const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+              canvas.width = Math.round(img.width * scale);
+              canvas.height = Math.round(img.height * scale);
+              canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+              canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.85);
+            };
+            img.onerror = () => reject(new Error('Image load failed'));
+            img.src = previewUrl!;
+          });
+        } catch {
+          // Fall back to the original file if compression fails
+          blob = selectedFile;
+        }
       }
 
       await uploadBytes(ref, blob, { contentType: 'image/jpeg' });
