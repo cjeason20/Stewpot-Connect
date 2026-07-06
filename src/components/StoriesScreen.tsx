@@ -345,7 +345,7 @@ export default function StoriesScreen({
         <>
           <div className="bg-brand-green px-5 pt-12 pb-5 text-white">
             <h1 className="font-poppins font-bold text-2xl">Story Capture</h1>
-            <p className="text-xs text-[#E8F5E9]/90 mt-1">Preserve and celebrate the voices of Stewpot</p>
+            <p className="text-xs text-white mt-1">Preserve and celebrate the voices of Stewpot</p>
           </div>
 
           {/* Quick wizard card */}

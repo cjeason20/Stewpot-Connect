@@ -121,7 +121,7 @@ export default function PhotosScreen({ currentUser, photos, onAddPhoto, onDelete
       <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0 flex items-end justify-between">
         <div>
           <h1 className="font-poppins font-bold text-2xl">Stewpot Photos</h1>
-          <p className="text-xs text-[#E8F5E9]/90 mt-1">Moments from our team &amp; community</p>
+          <p className="text-xs text-white mt-1">Moments from our team &amp; community</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}

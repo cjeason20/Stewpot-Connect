@@ -165,7 +165,7 @@ export default function CommunityScreen({
       {/* Header */}
       <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0">
         <h1 className="font-poppins font-bold text-2xl">Community</h1>
-        <p className="text-xs text-[#E8F5E9]/90 mt-1">Share updates, staff appreciations, and more</p>
+        <p className="text-xs text-white mt-1">Share updates, staff appreciations, and more</p>
       </div>
 
       {/* Compose trigger */}

@@ -146,7 +146,7 @@ export default function CalendarScreen({ events, currentUser, onSubmitEventReque
       <div className="bg-brand-green px-5 pt-12 pb-5 text-white flex-shrink-0 flex items-start justify-between">
         <div>
           <h1 className="font-poppins font-bold text-2xl">Calendar</h1>
-          <p className="text-xs text-[#E8F5E9]/90 mt-1">Stewpot events &amp; important dates</p>
+          <p className="text-xs text-white mt-1">Stewpot events &amp; important dates</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
