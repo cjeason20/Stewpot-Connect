@@ -11,6 +11,7 @@ import DirectoryScreen from './components/DirectoryScreen';
 import CalendarScreen from './components/CalendarScreen';
 import PhotosScreen from './components/PhotosScreen';
 import InstallPrompt from './components/InstallPrompt';
+import { initNotifications } from './lib/notifications';
 
 import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays, Camera } from 'lucide-react';
 
@@ -85,6 +86,7 @@ export default function App() {
               setCurrentUser(newProfile);
             }
             setActiveTab('home');
+            initNotifications(firebaseUser.uid);
           } catch (e) {
             console.error('Error handling logged-in user profile:', e);
           }
@@ -534,7 +536,7 @@ export default function App() {
               <div className="w-full max-w-md mx-auto px-4">
                 <LoginScreen
                   users={users}
-                  onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
+                  onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); initNotifications(u.id); }}
                   onGoogleLogin={handleGoogleLogin}
                 />
               </div>
@@ -641,7 +643,7 @@ export default function App() {
           <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
             {activeTab === 'login' && (
               <LoginScreen users={users}
-                onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
+                onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); initNotifications(u.id); }}
                 onGoogleLogin={handleGoogleLogin}
               />
             )}

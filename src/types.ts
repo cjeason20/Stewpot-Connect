@@ -22,6 +22,7 @@ export interface User {
   notifResources?: boolean;
   notifEvents?: boolean;
   notifTeam?: boolean;
+  fcmTokens?: string[];
 }
 
 export interface Story {

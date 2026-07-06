@@ -1,0 +1,18 @@
+{
+  "name": "stewpot-connect-functions",
+  "description": "Cloud Functions for Stewpot Connect",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "engines": { "node": "22" },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.3.0",
+    "firebase-functions": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^22.0.0"
+  }
+}
