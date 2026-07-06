@@ -245,7 +245,7 @@ export default function HomeScreen({
       {/* Upcoming Events */}
       <div className="px-5 mt-5">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="font-poppins font-bold text-sm text-white bg-brand-green px-3 py-1.5 rounded-lg flex items-center gap-1.5">📅 Upcoming Events</h2>
+          <h2 className="font-poppins font-semibold text-base text-brand-text flex items-center gap-1.5">📅 Upcoming Events</h2>
           <button
             onClick={() => onSetTab('calendar')}
             className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"
@@ -314,7 +314,7 @@ export default function HomeScreen({
       {/* Recent Team Posts */}
       <div className="px-5 mt-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="font-poppins font-bold text-sm text-white bg-brand-green px-3 py-1.5 rounded-lg flex items-center gap-1.5">💬 Recent Team Posts</h2>
+          <h2 className="font-poppins font-semibold text-base text-brand-text flex items-center gap-1.5">💬 Recent Team Posts</h2>
           <button
             onClick={() => onSetTab('forum')}
             className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"
@@ -386,7 +386,7 @@ export default function HomeScreen({
                       <span className="text-xs text-brand-text-light font-medium ml-auto">{p.date}</span>
                     </div>
                     {p.text && (
-                      <p className="text-xs text-brand-text-mid leading-relaxed line-clamp-2">{p.text}</p>
+                      <p className="text-xs text-brand-text leading-relaxed line-clamp-2">{p.text}</p>
                     )}
                     <div className="text-xs text-brand-text-light mt-2 font-medium">{p.author}</div>
                   </div>
@@ -400,7 +400,7 @@ export default function HomeScreen({
       {/* Birthdays scroll */}
       <div className="mt-6">
         <div className="px-5 flex justify-between items-center mb-3">
-          <h2 className="font-poppins font-bold text-sm text-white bg-brand-green px-3 py-1.5 rounded-lg flex items-center gap-1.5">🎂 Birthdays &amp; Milestones</h2>
+          <h2 className="font-poppins font-semibold text-base text-brand-text flex items-center gap-1.5">🎂 Birthdays &amp; Milestones</h2>
           <span className="text-xs font-semibold text-brand-green bg-brand-green-light px-2 py-0.5 rounded-full">30 Days</span>
         </div>
 
@@ -445,7 +445,7 @@ export default function HomeScreen({
       {/* Recent Resources */}
       <div className="px-5 mt-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="font-poppins font-bold text-sm text-white bg-brand-green px-3 py-1.5 rounded-lg flex items-center gap-1.5">📁 Recent Staff Files</h2>
+          <h2 className="font-poppins font-semibold text-base text-brand-text flex items-center gap-1.5">📁 Recent Staff Files</h2>
           <button 
             onClick={() => onSetTab('resources')}
             className="text-xs font-medium text-brand-green-dark hover:underline cursor-pointer focus:outline-none"

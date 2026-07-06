@@ -268,7 +268,7 @@ export default function CommunityScreen({
 
                     {/* Post Text */}
                     {p.text && (
-                      <p className="text-xs text-brand-text-mid leading-relaxed whitespace-pre-line">{p.text}</p>
+                      <p className="text-xs text-brand-text leading-relaxed whitespace-pre-line">{p.text}</p>
                     )}
 
                     {/* Attachment Render */}
