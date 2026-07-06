@@ -22,7 +22,7 @@ export default function LoginScreen({ users, onLogin, onGoogleLogin }: LoginScre
     );
 
     if (!user) {
-      alert('Incorrect email or password. Please use ceason@stewpot.org / Stewpot1981 or your added custom user.');
+      alert('Incorrect email or password. Please try again or contact your administrator.');
       return;
     }
     onLogin(user);
