@@ -359,7 +359,7 @@ export default function StoriesScreen({
               </div>
               <div className="text-left flex-1">
                 <h3 className="text-sm font-bold text-brand-text">Record New Story</h3>
-                <p className="text-[13px] text-brand-text-light mt-0.5">Simple 5-step process</p>
+                <p className="text-[13px] text-brand-text mt-0.5">Simple 5-step process</p>
               </div>
               <span className="text-xl text-brand-green-dark font-medium">&rsaquo;</span>
             </div>
@@ -483,7 +483,7 @@ export default function StoriesScreen({
                 <div className="flex justify-between items-center px-5 pt-4 pb-3 border-b border-brand-border flex-shrink-0">
                   <div>
                     <h3 className="text-sm font-bold text-brand-text">Interview Prompts</h3>
-                    <p className="text-[11px] text-brand-text-light mt-0.5">Read one aloud to guide the conversation</p>
+                    <p className="text-[11px] text-brand-text mt-0.5">Read one aloud to guide the conversation</p>
                   </div>
                   <button onClick={() => setShowPrompts(false)} className="text-brand-text-light hover:text-brand-text p-1 cursor-pointer focus:outline-none">
                     <X className="w-4 h-4" />
@@ -934,7 +934,7 @@ export default function StoriesScreen({
                       className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'named' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
                     >
                       <div className="font-bold text-xs text-brand-text">My Name May Be Used</div>
-                      <p className="text-xs text-brand-text-mid mt-0.5">My real name can be shared alongside this story.</p>
+                      <p className="text-xs text-brand-text mt-0.5">My real name can be shared alongside this story.</p>
                     </div>
 
                     <div
@@ -942,7 +942,7 @@ export default function StoriesScreen({
                       className={`p-3.5 rounded-xl border cursor-pointer text-left transition-all ${consentType === 'anonymous' ? 'border-brand-green bg-brand-green-light' : 'border-brand-border'}`}
                     >
                       <div className="font-bold text-xs text-brand-text">Keep Me Anonymous</div>
-                      <p className="text-xs text-brand-text-mid mt-0.5">My name should not be shared alongside this story.</p>
+                      <p className="text-xs text-brand-text mt-0.5">My name should not be shared alongside this story.</p>
                     </div>
                   </div>
                 </div>

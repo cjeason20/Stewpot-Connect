@@ -222,7 +222,7 @@ export default function HomeScreen({
         </div>
         <div className="text-left">
           <h3 className="text-sm font-bold text-brand-text">Record a Story</h3>
-          <p className="text-xs text-brand-text-light mt-0.5">Capture a client or volunteer experience</p>
+          <p className="text-xs text-brand-text mt-0.5">Capture a client or volunteer experience</p>
         </div>
         <ChevronRight className="w-5 h-5 text-brand-text-light ml-auto flex-shrink-0" />
       </div>
@@ -237,7 +237,7 @@ export default function HomeScreen({
         </div>
         <div className="text-left">
           <h3 className="text-sm font-bold text-brand-text">View Calendar</h3>
-          <p className="text-xs text-brand-text-light mt-0.5">Browse upcoming Stewpot events</p>
+          <p className="text-xs text-brand-text mt-0.5">Browse upcoming Stewpot events</p>
         </div>
         <ChevronRight className="w-5 h-5 text-brand-text-light ml-auto flex-shrink-0" />
       </div>

@@ -544,7 +544,7 @@ export default function ProfileScreen({
             <div className="flex justify-between items-center px-5 py-4 border-b border-brand-border">
               <div>
                 <h3 className="text-sm font-bold font-poppins text-brand-text">Position Your Photo</h3>
-                <p className="text-xs text-brand-text-light mt-0.5">Drag to center your face in the circle</p>
+                <p className="text-xs text-brand-text mt-0.5">Drag to center your face in the circle</p>
               </div>
               <X className="w-5 h-5 text-brand-text-light cursor-pointer" onClick={() => { URL.revokeObjectURL(cropModal.objectUrl); setCropModal(null); }} />
             </div>

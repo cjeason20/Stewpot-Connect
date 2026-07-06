@@ -105,7 +105,7 @@ export default function DirectoryScreen({ currentUser, users }: DirectoryScreenP
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-brand-text-light truncate mt-0.5">
+                        <div className="text-xs text-brand-text truncate mt-0.5">
                           {u.title || 'Staff Member'}
                         </div>
 

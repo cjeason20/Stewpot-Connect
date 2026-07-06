@@ -241,7 +241,7 @@ export default function CalendarScreen({ events, currentUser, onSubmitEventReque
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-brand-text leading-tight">{e.title}</h3>
                         {e.description && (
-                          <p className="text-xs text-brand-text-mid mt-1 leading-relaxed line-clamp-2">{e.description}</p>
+                          <p className="text-xs text-brand-text mt-1 leading-relaxed line-clamp-2">{e.description}</p>
                         )}
                       </div>
                       <span className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full flex-shrink-0 ${style.pill}`}>
@@ -369,7 +369,7 @@ export default function CalendarScreen({ events, currentUser, onSubmitEventReque
               >
                 {isSubmittingEvent ? 'Submitting…' : 'Submit for Approval'}
               </button>
-              <p className="text-[11px] text-brand-text-light text-center">An admin will review your event submission.</p>
+              <p className="text-[11px] text-brand-text text-center">An admin will review your event submission.</p>
             </form>
           </div>
         </div>
