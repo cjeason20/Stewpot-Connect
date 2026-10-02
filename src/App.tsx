@@ -13,8 +13,8 @@ import CalendarScreen from './components/CalendarScreen';
 import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
-import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
-import { signInAnonymously, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -41,51 +41,6 @@ export default function App() {
       if (firebaseUser) {
         setIsAuthed(true);
         
-        // If they logged in via Google Auth, link it to their user profile
-        if (!firebaseUser.isAnonymous) {
-          try {
-            const userDocSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDocSnap.exists()) {
-              setCurrentUser(userDocSnap.data() as User);
-            } else {
-              // Provision a default profile under their UID
-              const emailLower = (firebaseUser.email || '').toLowerCase();
-              const isEmailAdmin = emailLower === 'cj.eason20@gmail.com' || 
-                                   emailLower === 'ceason@stewpot.org' ||
-                                   emailLower.endsWith('stewpot.org');
-              
-              const initials = (firebaseUser.displayName || firebaseUser.email || 'SM')
-                .split('@')[0]
-                .split(' ')
-                .map(w => w[0])
-                .join('')
-                .substring(0, 2)
-                .toUpperCase();
-
-              const newProfile: User = {
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Staff Member',
-                email: firebaseUser.email || '',
-                role: isEmailAdmin ? 'admin' : 'member',
-                title: isEmailAdmin ? 'Director' : 'Staff Coordinator',
-                dept: 'General Operations',
-                initials: initials,
-                bday: '',
-                anniv: '',
-                notifPosts: true,
-                notifAnnounce: true,
-                notifBdays: true,
-                notifStories: true
-              };
-              
-              await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-              setCurrentUser(newProfile);
-            }
-            setActiveTab('home');
-          } catch (e) {
-            console.error('Error handling logged-in user profile:', e);
-          }
-        }
       } else {
         setIsAuthed(false);
         // Clean session
@@ -503,7 +458,6 @@ export default function App() {
                 <LoginScreen
                   users={users}
                   onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
-                  onGoogleLogin={handleGoogleLogin}
                 />
               </div>
             </div>
@@ -606,7 +560,6 @@ export default function App() {
             {activeTab === 'login' && (
               <LoginScreen users={users}
                 onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
-                onGoogleLogin={handleGoogleLogin}
               />
             )}
             {currentUser && (
@@ -781,7 +734,6 @@ export default function App() {
                   setCurrentUser(u);
                   setActiveTab('home');
                 }} 
-                onGoogleLogin={handleGoogleLogin}
               />
             )}
 
@@ -951,16 +903,6 @@ export default function App() {
 
     </div>
   );
-
-  async function handleGoogleLogin() {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error('Google sign-in error:', e);
-      alert('Google authentication failed. Please try again.');
-    }
-  }
 
   async function doSignOut() {
     try {
