@@ -50,6 +50,7 @@ export default function StoriesScreen({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const [hasSigned, setHasSigned] = useState(false);
+  const [capturedWaiverBlob, setCapturedWaiverBlob] = useState<Blob | null>(null);
 
   // Edit-modal upload states
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -155,6 +156,7 @@ export default function StoriesScreen({
     setStoryPhotoFile(null);
     setStoryPhotoPreview(null);
     setHasSigned(false);
+    setCapturedWaiverBlob(null);
     clearSignature();
     setIsRecording(false);
     setRecDuration(0);
@@ -279,8 +281,8 @@ export default function StoriesScreen({
       const storyId = String(Date.now());
 
       // Upload signed waiver if present
-      if (hasSigned) {
-        const waiverBlob = await getSignatureBlob();
+      if (hasSigned && capturedWaiverBlob) {
+        const waiverBlob = capturedWaiverBlob;
         const waiverFileName = `${storyId}.png`;
         const waiverRef = storageRef(storage, `waivers/${waiverFileName}`);
         await uploadBytes(waiverRef, waiverBlob, { contentType: 'image/png' });
@@ -1003,10 +1005,16 @@ export default function StoriesScreen({
                     Back
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (consentType === 'none') {
                         alert('Please select whether the participant\'s name can be used or should stay anonymous.');
                         return;
+                      }
+                      if (hasSigned && canvasRef.current) {
+                        try {
+                          const blob = await getSignatureBlob();
+                          setCapturedWaiverBlob(blob);
+                        } catch (_) {}
                       }
                       setStep(3);
                     }}
