@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { User, Post, DocumentItem, Story, Prompt, CalendarEvent, Photo, UserRole, PostCategory } from './types';
+import { User, Post, DocumentItem, Story, Prompt, CalendarEvent, UserRole, PostCategory } from './types';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import StoriesScreen from './components/StoriesScreen';
@@ -9,15 +9,12 @@ import ProfileScreen from './components/ProfileScreen';
 import AdminScreen from './components/AdminScreen';
 import DirectoryScreen from './components/DirectoryScreen';
 import CalendarScreen from './components/CalendarScreen';
-import PhotosScreen from './components/PhotosScreen';
-import InstallPrompt from './components/InstallPrompt';
-import { initNotifications } from './lib/notifications';
 
-import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays, Camera } from 'lucide-react';
+import { Home, Mic, MessageSquare, BookOpen, User as UserIcon, Shield, LogOut, Bell, Users, CalendarDays } from 'lucide-react';
 
 import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
-import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
-import { signInAnonymously, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -27,7 +24,6 @@ export default function App() {
   const [stories, setStories] = useState<Story[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [photos, setPhotos] = useState<Photo[]>([]);
   
   // Navigation states
   // 'login' | 'home' | 'stories' | 'forum' | 'resources' | 'profile' | 'admin'
@@ -45,52 +41,6 @@ export default function App() {
       if (firebaseUser) {
         setIsAuthed(true);
         
-        // If they logged in via Google Auth, link it to their user profile
-        if (!firebaseUser.isAnonymous) {
-          try {
-            const userDocSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDocSnap.exists()) {
-              setCurrentUser(userDocSnap.data() as User);
-            } else {
-              // Provision a default profile under their UID
-              const emailLower = (firebaseUser.email || '').toLowerCase();
-              const isEmailAdmin = emailLower === 'cj.eason20@gmail.com' || 
-                                   emailLower === 'ceason@stewpot.org' ||
-                                   emailLower.endsWith('stewpot.org');
-              
-              const initials = (firebaseUser.displayName || firebaseUser.email || 'SM')
-                .split('@')[0]
-                .split(' ')
-                .map(w => w[0])
-                .join('')
-                .substring(0, 2)
-                .toUpperCase();
-
-              const newProfile: User = {
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Staff Member',
-                email: firebaseUser.email || '',
-                role: isEmailAdmin ? 'admin' : 'member',
-                title: isEmailAdmin ? 'Director' : 'Staff Coordinator',
-                dept: 'General Operations',
-                initials: initials,
-                bday: '',
-                anniv: '',
-                notifPosts: true,
-                notifAnnounce: true,
-                notifBdays: true,
-                notifStories: true
-              };
-              
-              await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-              setCurrentUser(newProfile);
-            }
-            setActiveTab('home');
-            initNotifications(firebaseUser.uid);
-          } catch (e) {
-            console.error('Error handling logged-in user profile:', e);
-          }
-        }
       } else {
         setIsAuthed(false);
         // Clean session
@@ -213,18 +163,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'events');
     });
 
-    // 6. Snapshot listener for PHOTOS
-    const unsubPhotos = onSnapshot(collection(db, 'photos'), (snapshot) => {
-      const list: Photo[] = [];
-      snapshot.forEach(docSnap => {
-        list.push({ ...docSnap.data(), id: docSnap.id } as Photo);
-      });
-      setPhotos(list);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'photos');
-    });
-
-    // 7. Snapshot listener for PROMPTS
+    // 6. Snapshot listener for PROMPTS
     const unsubPrompts = onSnapshot(collection(db, 'prompts'), (snapshot) => {
       const pList: Prompt[] = [];
       snapshot.forEach(docSnap => {
@@ -244,7 +183,6 @@ export default function App() {
       unsubDocs();
       unsubStories();
       unsubEvents();
-      unsubPhotos();
       unsubPrompts();
     };
   }, []);
@@ -369,22 +307,6 @@ export default function App() {
     }
   };
 
-  const handleAddPhoto = async (photo: Photo) => {
-    try {
-      await setDoc(doc(db, 'photos', photo.id), photo);
-    } catch (e) {
-      handleFirestoreError(e, OperationType.CREATE, `photos/${photo.id}`);
-    }
-  };
-
-  const handleDeletePhoto = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'photos', id));
-    } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `photos/${id}`);
-    }
-  };
-
   const handleAddPrompt = async (p: Prompt) => {
     try {
       await setDoc(doc(db, 'prompts', p.id), p);
@@ -479,7 +401,6 @@ export default function App() {
                 { id: 'forum',     label: 'Community',   Icon: MessageSquare,desc: 'Team posts & announcements' },
                 { id: 'resources',  label: 'Resources',  Icon: BookOpen,     desc: 'Documents & files' },
                 { id: 'calendar',  label: 'Calendar',   Icon: CalendarDays, desc: 'Events & schedule' },
-                { id: 'photos',    label: 'Photos',     Icon: Camera,       desc: 'Stewpot photo gallery' },
                 { id: 'directory', label: 'Directory',  Icon: Users,        desc: 'Staff contact info' },
                 { id: 'profile',   label: 'My Profile', Icon: UserIcon,     desc: 'Settings & account' },
                 ...(currentUser.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', Icon: Shield, desc: 'Users, docs & controls' }] : [])
@@ -536,8 +457,7 @@ export default function App() {
               <div className="w-full max-w-md mx-auto px-4">
                 <LoginScreen
                   users={users}
-                  onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); initNotifications(u.id); }}
-                  onGoogleLogin={handleGoogleLogin}
+                  onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
                 />
               </div>
             </div>
@@ -555,7 +475,6 @@ export default function App() {
                       {activeTab === 'forum'     && 'Community'}
                       {activeTab === 'resources'  && 'Resources'}
                       {activeTab === 'calendar'  && 'Calendar'}
-                      {activeTab === 'photos'    && 'Photos'}
                       {activeTab === 'directory' && 'Staff Directory'}
                       {activeTab === 'profile'   && 'My Profile'}
                       {activeTab === 'admin'     && 'Admin Panel'}
@@ -602,9 +521,6 @@ export default function App() {
                     {activeTab === 'calendar' && (
                       <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
                     )}
-                    {activeTab === 'photos' && (
-                      <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
-                    )}
                     {activeTab === 'directory' && (
                       <DirectoryScreen currentUser={currentUser} users={users} />
                     )}
@@ -643,8 +559,7 @@ export default function App() {
           <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
             {activeTab === 'login' && (
               <LoginScreen users={users}
-                onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); initNotifications(u.id); }}
-                onGoogleLogin={handleGoogleLogin}
+                onLogin={(u) => { setCurrentUser(u); setActiveTab('home'); }}
               />
             )}
             {currentUser && (
@@ -667,9 +582,6 @@ export default function App() {
                 )}
                 {activeTab === 'calendar' && (
                   <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
-                )}
-                {activeTab === 'photos' && (
-                  <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
                 )}
                 {activeTab === 'directory' && (
                   <DirectoryScreen currentUser={currentUser} users={users} />
@@ -822,7 +734,6 @@ export default function App() {
                   setCurrentUser(u);
                   setActiveTab('home');
                 }} 
-                onGoogleLogin={handleGoogleLogin}
               />
             )}
 
@@ -874,10 +785,6 @@ export default function App() {
 
                 {activeTab === 'calendar' && (
                   <CalendarScreen events={events} currentUser={currentUser} onSubmitEventRequest={handleAddEvent} />
-                )}
-
-                {activeTab === 'photos' && (
-                  <PhotosScreen currentUser={currentUser} photos={photos} onAddPhoto={handleAddPhoto} onDeletePhoto={handleDeletePhoto} />
                 )}
 
                 {activeTab === 'directory' && (
@@ -966,15 +873,6 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setActiveTab('photos')}
-                className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'photos' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
-              >
-                <Camera className={`w-5.5 h-5.5 ${activeTab === 'photos' ? 'text-brand-green' : 'text-brand-text-light'}`} />
-                Photos
-                {activeTab === 'photos' && <span className="w-1.5 h-1.5 bg-brand-green rounded-full" />}
-              </button>
-
-              <button
                 onClick={() => setActiveTab('directory')}
                 className={`flex flex-col items-center gap-1 text-xs font-medium transition-all ${activeTab === 'directory' ? 'text-brand-green-dark' : 'text-brand-text-light hover:text-brand-green-dark'}`}
               >
@@ -1003,21 +901,8 @@ export default function App() {
       )}
       {/* end !isStandalone mobile browser layout */}
 
-      {/* PWA install prompt — shown only to logged-in users on mobile browsers */}
-      {currentUser && <InstallPrompt />}
-
     </div>
   );
-
-  async function handleGoogleLogin() {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error('Google sign-in error:', e);
-      alert('Google authentication failed. Please try again.');
-    }
-  }
 
   async function doSignOut() {
     try {

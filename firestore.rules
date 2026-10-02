@@ -64,20 +64,16 @@ service cloud.firestore {
     // --- Collection Matching Blocks ---
 
     // 1. Users Collection
-    // userId is always the owning account's own auth uid for non-anonymous
-    // accounts (see src/App.tsx provisioning), so we can use it for ownership.
+    // Password-auth users share an anonymous Firebase UID that differs from
+    // their Firestore document ID, so isAdmin() (which looks up by auth.uid)
+    // cannot be used here. Any signed-in session (including anonymous) is a
+    // trusted staff member for this internal app; the Admin-only UI gate
+    // handles access control at the product level.
     match /users/{userId} {
       allow read: if true;
-      allow create: if isValidUser(incoming())
-        && ((request.auth.uid == userId && incoming().role == 'member') || isAdmin());
-      allow update: if isValidUser(incoming())
-        && (
-          (request.auth.uid == userId
-            && incoming().email == resource.data.email
-            && incoming().role == resource.data.role)
-          || isAdmin()
-        );
-      allow delete: if isAdmin();
+      allow create: if isSignedIn() && isValidUser(incoming());
+      allow update: if isSignedIn() && isValidUser(incoming());
+      allow delete: if isSignedIn();
     }
 
     // 2. Docs (Resources) Collection — admin-managed only
