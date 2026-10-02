@@ -101,12 +101,13 @@ export default function AdminScreen({
 
   const jobTitles = [
     'Accountant', 'Assistant', 'Assistant Director', 'Case Manager', 'Chief Operating Officer',
-    'Contract Employee', 'Custodian', 'Director', 'Director of Case Management',
-    'Director of Shelter Services', 'Director of Special Events & Communications',
-    'Executive Director', 'Grants & Admin Manager', 'Housing Navigator',
-    'Housing Stability Case Manager', 'Manager', 'Outreach Specialist',
-    'Program Staff', 'Receptionist', 'Shelter Relief Staff', 'Shelter Supervisor',
-    'Volunteer Assistant',
+    'Clothing Closet Manager', 'Contract Employee', 'Custodian', 'Director',
+    'Director of Case Management', 'Director of Shelter Services',
+    'Director of Special Events & Communications', 'Executive Director',
+    'Food Pantry Manager', 'Grants & Admin Manager', 'Housing Navigator',
+    'Housing Stability Case Manager', 'Kitchen Cook', 'Manager',
+    'Meals on Wheels Driver', 'Outreach Specialist', 'Program Staff',
+    'Receptionist', 'Shelter Relief Staff', 'Shelter Supervisor', 'Volunteer Assistant',
   ];
 
   const departments = [
