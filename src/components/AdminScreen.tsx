@@ -112,9 +112,9 @@ export default function AdminScreen({
   const departments = [
     'Admin', 'Billy Brumfield Shelter', "Children's Services", 'Clothing Closet',
     'Community Kitchen', 'Food Pantry', 'Housing Assistance', "Matt's House",
-    'Meals on Wheels', 'Opportunity Center', 'Special Events & Communications',
-    'Street Outreach', 'Teen Services', 'Transitional Shelter',
-    'Vehicles & Maintenance', 'Volunteer Programs',
+    'Meals on Wheels', 'Opportunity Center', 'Programs for Kids and Teens',
+    'Special Events & Communications', 'Street Outreach', 'Teen Services',
+    'Transitional Shelter', 'Vehicles & Maintenance', 'Volunteer Programs',
   ];
 
   const handleAddUserSubmit = async (e: React.FormEvent) => {
