@@ -107,7 +107,7 @@ export default function AdminScreen({
     'Food Pantry Manager', 'Grants & Admin Manager', 'Housing Navigator',
     'Housing Stability Case Manager', 'Kitchen Cook', 'Manager',
     'Meals on Wheels Driver', 'Outreach Specialist', 'Program Staff',
-    'Receptionist', 'Shelter Relief Staff', 'Shelter Supervisor', 'Volunteer Assistant',
+    'Receptionist', 'Security', 'Shelter Relief Staff', 'Shelter Supervisor', 'Volunteer Assistant',
   ];
 
   const departments = [
