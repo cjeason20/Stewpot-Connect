@@ -86,25 +86,25 @@ service cloud.firestore {
     // 3. Posts Collection
     match /posts/{postId} {
       allow read: if true;
-      allow create: if postId.size() <= 200
+      allow create: if isSignedIn()
+        && postId.size() <= 200
+        && isValidPost(incoming());
+      allow update: if isSignedIn()
         && isValidPost(incoming())
-        && isOwner(incoming().authorId);
-      allow update: if isValidPost(incoming())
-        && incoming().authorId == resource.data.authorId
-        && (isOwner(resource.data.authorId) || isAdmin());
-      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+        && incoming().authorId == resource.data.authorId;
+      allow delete: if isSignedIn() || isAdmin();
     }
 
     // 4. Stories Collection
     match /stories/{storyId} {
       allow read: if true;
-      allow create: if storyId.size() <= 200
+      allow create: if isSignedIn()
+        && storyId.size() <= 200
+        && isValidStory(incoming());
+      allow update: if isSignedIn()
         && isValidStory(incoming())
-        && isOwner(incoming().authorId);
-      allow update: if isValidStory(incoming())
-        && incoming().authorId == resource.data.authorId
-        && (isOwner(resource.data.authorId) || isAdmin());
-      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+        && incoming().authorId == resource.data.authorId;
+      allow delete: if isSignedIn() || isAdmin();
     }
 
     // 5. Interview Prompts Collection (admin-managed)
